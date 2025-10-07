@@ -45,10 +45,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     setAssignLoading(true);
     try {
       await apiClient.updateTask(task.id, {
-        assignee_id: user.id,
+        assignee_id: user.id
       });
       onUpdate();
-      onClose();
     } catch (error) {
       console.error('Error assigning task:', error);
     } finally {
@@ -62,10 +61,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     setAssignLoading(true);
     try {
       await apiClient.updateTask(task.id, {
-        assignee_id: null,
+        assignee_id: null
       });
       onUpdate();
-      onClose();
     } catch (error) {
       console.error('Error unassigning task:', error);
     } finally {
@@ -92,6 +90,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const handleEditSuccess = () => {
     onUpdate();
     setIsEditModalOpen(false);
+    onClose(); // Close the TaskDetailsModal as well
   };
 
   return (
@@ -114,7 +113,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <Pencil className="w-4 h-4 mr-1" />
               Edit
             </Button>
-
+            
             {!task.assignee_id ? (
               <Button
                 variant="secondary"
@@ -123,7 +122,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 disabled={assignLoading}
               >
                 <User className="w-4 h-4 mr-1" />
-                {assignLoading? 'Assigning...' : 'Assign to me'}
+                {assignLoading ? 'Assigning...' : 'Assign to me'}
               </Button>
             ) : task.assignee_id === user?.id ? (
               <Button
@@ -133,15 +132,15 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 disabled={assignLoading}
               >
                 <UserCheck className="w-4 h-4 mr-1" />
-                {assignLoading? 'Unassigning...' : 'Unassign'}
+                {assignLoading ? 'Unassigning...' : 'Unassign'}
               </Button>
             ) : (
-              <div className='flex items-center px-3 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm'>
-                <UserCheck className='w-4 h-4 mr-1' />
+              <div className="flex items-center px-3 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
+                <UserCheck className="w-4 h-4 mr-1" />
                 Assigned to {task.assignee_name || 'Someone'}
               </div>
             )}
-
+            
             <Button
               variant="danger"
               size="sm"
@@ -188,6 +187,23 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                       {tag}
                     </span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {task.assignee_id && (
+              <div>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                  <User className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
+                  Assigned to
+                </h4>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {task.assignee_name || 'Unknown User'}
+                  </span>
                 </div>
               </div>
             )}
