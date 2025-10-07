@@ -11,11 +11,18 @@ interface TaskCardProps {
 }
 
 const PRIORITY_COLORS = {
-  low: 'bg-gray-100 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-yellow-100 text-yellow-700',
-  urgent: 'bg-red-100 text-red-700',
+  low: 'bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-200',
+  medium: 'bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-blue-200',
+  high: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-600 dark:text-yellow-200',
+  urgent: 'bg-red-100 text-red-700 dark:bg-red-600 dark:text-red-200',
 };
+
+const PRIORITY_CARD_COLORS = {
+  low: 'bg-white dark:bg-gray-700 border-1-gray-400',
+  medium: 'bg-blue-50 dark:bg-blue-900/20 border-1-blue-500',
+  high: 'bg-yellow-50 dark:bg-yellow-900/20 border-1-yellow-500',
+  urgent: 'bg-red-50 dark:bg-red-900/20 border-1-red-500',
+}
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const {
@@ -39,7 +46,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4 hover:shadow-md dark:hover:shadow-lg transition-all duration-200 cursor-pointer group"
+      className={`${PRIORITY_CARD_COLORS[task.priority]} rounded-lg border border-gray-200 dark:border-gray-600 border-1-4 p-4 hover:shadow-md dark:hover:shadow-lg transition-all duration-200 cursor-pointer group`}
       onClick={onClick}
     >
       <div className="space-y-3">
