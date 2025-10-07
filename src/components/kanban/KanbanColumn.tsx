@@ -23,7 +23,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   });
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 min-h-96 flex flex-col transition-colors duration-300">
+    <div className="rounded-lg p-4 min-h-96 flex flex-col transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <div
