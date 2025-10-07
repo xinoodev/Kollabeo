@@ -1,0 +1,100 @@
+import React from 'react';
+import { Task } from '../../types';
+import { Calendar, MessageSquare, User } from 'lucide-react';
+import { format } from 'date-fns';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface TaskCardProps {
+  task: Task;
+  onClick: () => void;
+}
+
+const PRIORITY_COLORS = {
+  low: 'bg-gray-100 text-gray-700',
+  medium: 'bg-blue-100 text-blue-700',
+  high: 'bg-yellow-100 text-yellow-700',
+  urgent: 'bg-red-100 text-red-700',
+};
+
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4 hover:shadow-md dark:hover:shadow-lg transition-all duration-200 cursor-pointer group"
+      onClick={onClick}
+    >
+      <div className="space-y-3">
+        <div className="flex items-start justify-between">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 line-clamp-2">
+            {task.title}
+          </h3>
+          <span className={`px-2 py-1 text-xs rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
+            {task.priority}
+          </span>
+        </div>
+
+        {task.description && (
+          <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">{task.description}</p>
+        )}
+
+        {task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {task.tags.slice(0, 3).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-md"
+              >
+                {tag}
+              </span>
+            ))}
+            {task.tags.length > 3 && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">+{task.tags.length - 3} more</span>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center space-x-2">
+            {task.due_date && (
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                <span>{format(new Date(task.due_date), 'MMM dd')}</span>
+              </div>
+            )}
+            {task.assignee_id && (
+              <div className="flex items-center space-x-1">
+                <User className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                <span className="text-green-600 dark:text-green-400">
+                  {task.assignee_name || 'Assigned'}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-1">
+            <MessageSquare className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+            <span>0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
