@@ -18,11 +18,11 @@ const PRIORITY_COLORS = {
 };
 
 const PRIORITY_CARD_COLORS = {
-  low: 'bg-white dark:bg-gray-700 border-1-gray-400',
-  medium: 'bg-blue-50 dark:bg-blue-900/20 border-1-blue-500',
-  high: 'bg-yellow-50 dark:bg-yellow-900/20 border-1-yellow-500',
-  urgent: 'bg-red-50 dark:bg-red-900/20 border-1-red-500',
-}
+  low: 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 border-l-4 border-l-gray-400',
+  medium: 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 border-l-4 border-l-blue-500',
+  high: 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 border-l-4 border-l-yellow-500',
+  urgent: 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 border-l-4 border-l-red-500',
+};
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const {
