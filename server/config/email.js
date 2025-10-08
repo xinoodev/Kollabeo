@@ -3,29 +3,73 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const createTransporter = () => {
-    if (process.env.NODE_ENV === 'development') {
-        return nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            auth: {
-                user: 'ethereal.user@ethereal.email',
-                pass: 'ethereal.pass'
-            }
-        });
-    }
-
-    return nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
+const createTestTransporter = async () => {
+    console.log('🧪 Creating test transporter for development...');
+    const testAccount = await nodemailer.createTestAccount();
+    
+    console.log('📧 Test account created:', {
+        user: testAccount.user,
+        smtp: testAccount.smtp
+    });
+    
+    return nodemailer.createTransporter({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD
+            user: testAccount.user,
+            pass: testAccount.pass
         }
     });
-}
+};
 
-export const transporter = createTransporter();
+const createTransporter = async () => {
+    // Check if we should use real SMTP even in development
+    const useRealSMTP = process.env.USE_REAL_SMTP === 'true' || process.env.NODE_ENV === 'production';
+    
+    if (useRealSMTP && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+        console.log('🏭 Using real SMTP configuration...');
+        console.log('📧 SMTP Config:', {
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            user: process.env.SMTP_USER ? '***' : 'NOT SET'
+        });
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            secure: process.env.SMTP_PORT == 465,
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD
+            }
+        });
+
+        try {
+            await transporter.verify();
+            console.log('✅ Real SMTP transporter verified successfully');
+            return transporter;
+        } catch (error) {
+            console.error('❌ Real SMTP transporter verification failed:', error);
+            if (process.env.NODE_ENV === 'production') {
+                throw error; // Don't fall back in production
+            }
+            console.log('🔄 Falling back to test account...');
+        }
+    }
+
+    // Use test account for development or if real SMTP failed
+    return await createTestTransporter();
+};
+
+let transporter;
+
+const getTransporter = async () => {
+    if (!transporter) {
+        transporter = await createTransporter();
+    }
+    return transporter;
+};
 
 // Email template
 export const emailTemplate = {
@@ -42,7 +86,7 @@ export const emailTemplate = {
                     <h2 style="color: #1F2937; margin: 0 0 20px 0;">Welcome to Kollabeo, ${userName}!</h2>
 
                     <p style="color: #4B5563; line-height: 1.6; margin: 0 0 20px 0;">
-                        Thanks you for signing up! To get started with Kollabeo and access all features,
+                        Thank you for signing up! To get started with Kollabeo and access all features,
                         please verify your email address by clicking the button below:
                     </p>
 
@@ -63,8 +107,8 @@ export const emailTemplate = {
                     </p>
                 </div>
 
-                <div style="background: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB">
-                    <p style="color: #6B7280" font-size: 14px; margin: 0;>
+                <div style="background: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
+                    <p style="color: #6B7280; font-size: 14px; margin: 0;">
                         © ${new Date().getFullYear()} Kollabeo. All rights reserved.
                     </p>
                 </div>
@@ -73,29 +117,84 @@ export const emailTemplate = {
     })
 };
 
-// Send verification email
-export const sendVerificationEmail = async (email, verificationToken, userName) => {
-    const verificationUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify?token=${verificationToken}`;
-
-    const { subject, html } = emailTemplate.verification(verificationUrl, userName);
-
+// Test email connectivity
+export const testEmailConnection = async () => {
     try {
-        const info = await transporter.sendMail({
-            from: `"Kollabeo" <${process.env.EMAIL_FROM} || noreply@kollabeo.com>`,
+        const emailTransporter = await getTransporter();
+        const verified = await emailTransporter.verify();
+        
+        console.log('✅ Email connection test successful:', verified);
+        return { success: true, verified };
+    } catch (error) {
+        console.error('❌ Email connection test failed:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+// Send verification email
+export const sendVerificationEmail = async (email, token, userName) => {
+    try {
+        console.log('🔄 Attempting to send verification email to:', email);
+        console.log('📧 Environment:', process.env.NODE_ENV);
+        console.log('🔧 USE_REAL_SMTP:', process.env.USE_REAL_SMTP);
+        
+        const emailTransporter = await getTransporter();
+        const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
+        
+        console.log('🔗 Verification URL:', verificationUrl);
+        
+        const mailOptions = {
+            from: process.env.FROM_EMAIL || 'noreply@kollabeo.com',
             to: email,
-            subject,
-            html
+            ...emailTemplate.verification(verificationUrl, userName)
+        };
+
+        console.log('📬 Mail options:', {
+            from: mailOptions.from,
+            to: mailOptions.to,
+            subject: mailOptions.subject
         });
 
-        console.log('Verification email sent:', info.messageId);
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+        const info = await emailTransporter.sendMail(mailOptions);
+        
+        console.log('✅ Email sent successfully:', {
+            messageId: info.messageId,
+            accepted: info.accepted,
+            rejected: info.rejected,
+            response: info.response
+        });
+        
+        // Check if we're using test email service
+        const isTestMode = info.envelope && info.envelope.from && info.envelope.from.includes('ethereal.email');
+        
+        if (isTestMode) {
+            const previewUrl = nodemailer.getTestMessageUrl(info);
+            console.log('🧪 TEST MODE: Email sent to test service');
+            console.log('👀 Preview URL: %s', previewUrl);
+            console.log('⚠️  NOTE: This is a test email. Real emails are NOT being sent.');
+            console.log('📧 To send real emails, configure SMTP settings and set USE_REAL_SMTP=true');
+            
+            return { 
+                success: true, 
+                messageId: info.messageId, 
+                previewUrl,
+                isTestMode: true,
+                message: 'Email sent to test service. Check preview URL to see the email content.'
+            };
+        } else {
+            console.log('✅ Real email sent successfully to:', email);
+            console.log('📧 Message ID:', info.messageId);
+            
+            return { 
+                success: true, 
+                messageId: info.messageId,
+                isTestMode: false,
+                message: 'Real email sent successfully'
+            };
         }
-
-        return { success: true, messageId: info.messageId };
+        
     } catch (error) {
-        console.error('Error sending verification email:', error);
+        console.error('❌ Error sending verification email:', error);
         return { success: false, error: error.message };
     }
 };
