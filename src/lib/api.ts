@@ -49,6 +49,27 @@ class ApiClient {
     return data;
   }
 
+  async verifyEmail(token: string) {
+    const data = await this.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+    
+    if (data.token) {
+      this.token = data.token;
+      localStorage.setItem('token', data.token);
+    }
+    
+    return data;
+  }
+
+  async resendVerification(email: string) {
+    return this.request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   async login(email: string, password: string) {
     const data = await this.request('/auth/login', {
       method: 'POST',

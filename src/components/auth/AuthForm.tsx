@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { EmailVerificationScreen } from './EmailVerificationScreen';
+import { EmailVerificationPage } from './EmailVerificationPage';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ThemeSelector } from '../ui/ThemeSelector';
@@ -6,7 +8,32 @@ import { useAuth } from '../../contexts/AuthContext';
 import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
+  // Check if we're on the verification page
+  const urlParams = new URLSearchParams(window.location.search);
+  const verificationToken = urlParams.get('token');
+  
+  if (verificationToken) {
+    return <EmailVerificationPage token={verificationToken} />;
+  }
+
+  const { user } = useAuth();
+  
+  // If user exists but is not verified, show verification screen
+  if (user && !user.email_verified) {
+    return (
+      <EmailVerificationScreen 
+        email={user.email} 
+        onBack={() => {
+          // Sign out the user to allow them to try with different email
+          const { signOut } = useAuth();
+          signOut();
+        }} 
+      />
+    );
+  }
   const [isLogin, setIsLogin] = useState(true);
+  const [showVerificationScreen, setShowVerificationScreen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -15,6 +42,18 @@ export const AuthForm: React.FC = () => {
 
   const { signIn, signUp } = useAuth();
 
+  if (showVerificationScreen) {
+    return (
+      <EmailVerificationScreen 
+        email={registeredEmail} 
+        onBack={() => {
+          setShowVerificationScreen(false);
+          setRegisteredEmail('');
+        }} 
+      />
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -22,11 +61,24 @@ export const AuthForm: React.FC = () => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) throw error;
+        const { data, error } = await signIn(email, password);
+        if (error) {
+          if (data?.requiresVerification) {
+            setRegisteredEmail(data.email || email);
+            setShowVerificationScreen(true);
+            return;
+          }
+          throw error;
+        }
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { data, error } = await signUp(email, password, fullName);
         if (error) throw error;
+        
+        if (data?.requiresVerification) {
+          setRegisteredEmail(email);
+          setShowVerificationScreen(true);
+          return;
+        }
       }
     } catch (error: any) {
       setError(error.message);

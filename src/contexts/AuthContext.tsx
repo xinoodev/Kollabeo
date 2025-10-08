@@ -5,6 +5,7 @@ interface User {
   id: number;
   email: string;
   full_name: string;
+  email_verified: boolean;
   avatar_url?: string;
 }
 
@@ -13,6 +14,8 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
+  verifyEmail: (token: string) => Promise<any>;
+  resendVerification: (email: string) => Promise<any>;
   signOut: () => void;
 }
 
@@ -40,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token) {
         try {
           const response = await apiClient.getCurrentUser();
+          // Set user even if not verified, the UI will handle verification state
           setUser(response.user);
         } catch (error) {
           console.error('Failed to get current user:', error);
@@ -55,7 +59,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const response = await apiClient.register(email, password, fullName);
-      setUser(response.user);
+      if (response.token) {
+        setUser(response.user);
+      }
       return { data: response, error: null };
     } catch (error: any) {
       return { data: null, error: { message: error.message } };
@@ -72,6 +78,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const verifyEmail = async (token: string) => {
+    try {
+      const response = await apiClient.verifyEmail(token);
+      setUser(response.user);
+      return { data: response, error: null };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    try {
+      const response = await apiClient.resendVerification(email);
+      return { data: response, error: null };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  };
+
   const signOut = () => {
     apiClient.logout();
     setUser(null);
@@ -82,6 +107,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     signUp,
     signIn,
+    verifyEmail,
+    resendVerification,
     signOut,
   };
 
