@@ -134,3 +134,18 @@ INSERT INTO users (email, password_hash, full_name) VALUES
 
 INSERT INTO projects (name, description, color, owner_id) VALUES
 ('Sample Project', 'A sample project to get you started', '#3B82F6', 1);
+
+-- Add email verification columns to users table
+ALTER TABLE users 
+ADD COLUMN email_verified BOOLEAN DEFAULT FALSE,
+ADD COLUMN email_verification_token VARCHAR(255),
+ADD COLUMN email_verification_expires TIMESTAMP;
+
+-- Create index for fast token lookups
+CREATE INDEX idx_users_verification_token ON users(email_verification_token);
+
+-- Mark existing users as verified (backward compatibility)
+UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;
+
+-- Set default to false for new users
+ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;

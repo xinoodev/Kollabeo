@@ -14,12 +14,21 @@ export const authenticateToken = async (req, res, next) => {
     
     // Get user from database
     const result = await pool.query(
-      'SELECT id, email, full_name, avatar_url FROM users WHERE id = $1',
+      'SELECT id, email, full_name, avatar_url, email_verified FROM users WHERE id = $1',
       [decoded.userId]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const user = result.rows[0];
+
+    if (!user.email_verified) {
+      return res.status(403).json({
+        error: 'Email verification required',
+        requiresVerification: true
+      });
     }
 
     req.user = result.rows[0];
