@@ -134,6 +134,18 @@ class ApiClient {
     });
   }
 
+  async updateColumn(id: number, updates: any) {
+    return this.request(`/columns/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteColumn(id: number) {
+    return this.request(`/columns/${id}`, {
+      method: 'DELETE',
+    });
+  }
   // Task methods
   async getTasks(projectId: number) {
     return this.request(`/tasks/project/${projectId}`);

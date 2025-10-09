@@ -3,7 +3,8 @@ import { Project, TaskColumn, Task } from '../../types';
 import { KanbanColumn } from './KanbanColumn';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import { Button } from '../ui/Button';
 import {
   DndContext,
   DragEndEvent,
@@ -19,7 +20,10 @@ import { TaskCard } from './TaskCard';
 interface KanbanBoardProps {
   project: Project;
   onTaskClick: (task: Task) => void;
-  onAddTask: (columnId: string) => void;
+  onAddTask: (columnId: number) => void;
+  onAddColumn: () => void;
+  onEditColumn: (column: TaskColumn) => void;
+  onDeleteColumn: (column: TaskColumn) => void;
   refreshTrigger: number;
 }
 
@@ -27,6 +31,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   project,
   onTaskClick,
   onAddTask,
+  onAddColumn,
+  onEditColumn,
+  onDeleteColumn,
   refreshTrigger,
 }) => {
   const [columns, setColumns] = useState<TaskColumn[]>([]);
@@ -96,11 +103,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
 
     // Moving over a column
-    if (columns.find(c => c.id === overId) && activeTask.column_id !== overId) {
+    if (columns.find(c => c.id === overId) && activeTask.column_id !== Number(overId)) {
       setTasks(prev => 
         prev.map(task => 
           task.id === activeId 
-            ? { ...task, column_id: overId as number }
+            ? { ...task, column_id: Number(overId) }
             : task
         )
       );
@@ -147,32 +154,44 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
-        {columns.map((column) => (
-          <div key={column.id} className="min-w-0">
-            <KanbanColumn
-              column={column}
-              tasks={tasks.filter(task => task.column_id === column.id)}
-              onTaskClick={onTaskClick}
-              onAddTask={(columnId: number) => onAddTask(String(columnId))}
-            />
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Board</h3>
+        <Button onClick={onAddColumn} size="sm" variant="secondary">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Column
+        </Button>
       </div>
 
-      <DragOverlay>
-        {activeTask && (
-          <div className="rotate-2">
-            <TaskCard task={activeTask} onClick={() => {}} />
-          </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
+          {columns.map((column) => (
+            <div key={column.id} className="min-w-0">
+              <KanbanColumn
+                column={column}
+                tasks={tasks.filter(task => task.column_id === column.id)}
+                onTaskClick={onTaskClick}
+                onAddTask={onAddTask}
+                onEditColumn={onEditColumn}
+                onDeleteColumn={onDeleteColumn}
+              />
+            </div>
+          ))}
+        </div>
+
+        <DragOverlay>
+          {activeTask && (
+            <div className="rotate-2">
+              <TaskCard task={activeTask} onClick={() => {}} />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 };

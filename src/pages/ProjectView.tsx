@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Project, Task } from '../types';
+import { Project, Task, TaskColumn } from '../types';
 import { Header } from '../components/layout/Header';
 import { KanbanBoard } from '../components/kanban/KanbanBoard';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { TaskDetailsModal } from '../components/tasks/TaskDetailsModal';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
+import { CreateColumnModal } from '../components/columns/CreateColumnModal';
+import { EditColumnModal } from '../components/columns/EditColumnModal';
 import { ArrowLeft } from 'lucide-react';
+import { apiClient } from '../lib/api';
 
 interface ProjectViewProps {
   project: Project;
@@ -16,8 +19,11 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isTaskDetailsModalOpen, setIsTaskDetailsModalOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
+  const [isCreateColumnModalOpen, setIsCreateColumnModalOpen] = useState(false);
+  const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number>(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedColumn, setSelectedColumn] = useState<TaskColumn | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleAddTask = (columnId: number) => {
@@ -38,7 +44,33 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
     // Handle project creation if needed
   };
 
+  const handleAddColumn = () => {
+    setIsCreateColumnModalOpen(true);
+  };
+
+  const handleEditColumn = (column: TaskColumn) => {
+    setSelectedColumn(column);
+    setIsEditColumnModalOpen(true);
+  };
+
+  const handleDeleteColumn = async (column: TaskColumn) => {
+    if (!confirm(`Are you sure you want to delete the "${column.name}" column? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteColumn(column.id);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete column');
+    }
+  };
+
+  const handleColumnUpdate = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
   return (
+    <>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Header onCreateProject={() => setIsCreateProjectModalOpen(true)} />
       
@@ -69,7 +101,10 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
         <KanbanBoard
           project={project}
           onTaskClick={handleTaskClick}
-          onAddTask={(columnId: string) => handleAddTask(Number(columnId))}
+          onAddTask={handleAddTask}
+          onAddColumn={handleAddColumn}
+          onEditColumn={handleEditColumn}
+          onDeleteColumn={handleDeleteColumn}
           refreshTrigger={refreshTrigger}
         />
       </main>
@@ -95,5 +130,20 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
         onSuccess={handleProjectCreated}
       />
     </div>
+
+      <CreateColumnModal
+        isOpen={isCreateColumnModalOpen}
+        onClose={() => setIsCreateColumnModalOpen(false)}
+        onSuccess={handleColumnUpdate}
+        projectId={project.id}
+      />
+
+      <EditColumnModal
+        isOpen={isEditColumnModalOpen}
+        onClose={() => setIsEditColumnModalOpen(false)}
+        onSuccess={handleColumnUpdate}
+        column={selectedColumn}
+      />
+    </>
   );
 };
