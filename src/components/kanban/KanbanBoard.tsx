@@ -16,6 +16,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  MeasuringStrategy,
 } from '@dnd-kit/core';
 import { TaskCard } from './TaskCard';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
@@ -49,10 +50,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
     })
   );
+
+  const measuring = {
+    droppable: {
+      strategy: MeasuringStrategy.Always,
+    },
+  };
 
   const fetchData = async () => {
     try {
@@ -229,6 +236,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        measuring={measuring}
       >
         <div className="overflow-x-auto -mx-1 scrollbar-custom">
           <SortableContext 
@@ -255,15 +263,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </SortableContext>
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={{
+          duration: 200,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+        }}>
           {activeTask && (
-            <div className="rotate-2" style={{ width: '280px' }}>
+            <div style={{ width: '280px' }}>
               <TaskCard task={activeTask} onClick={() => {}} />
             </div>
           )}
           {activeColumn && (
-            <div className="rotate-2 opacity-90" style={{ width: '280px' }}>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-xl">
+            <div style={{ width: '280px' }}>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-400">
                 <KanbanColumn
                   column={activeColumn}
                   tasks={tasks.filter(task => task.column_id === activeColumn.id)}

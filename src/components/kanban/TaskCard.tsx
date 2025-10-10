@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task } from '../../types';
-import { Calendar, MessageSquare, User } from 'lucide-react';
+import { Calendar, MessageSquare, User, Tag, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -32,11 +32,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: 'task',
+      task,
+    },
+    transition: {
+      duration: 200,
+      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -46,7 +56,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className={`${PRIORITY_CARD_COLORS[task.priority]} rounded-lg border border-gray-200 dark:border-gray-600 border-1-4 p-4 hover:shadow-md dark:hover:shadow-lg transition-all duration-200 cursor-pointer group`}
+      className={`${PRIORITY_CARD_COLORS[task.priority]} rounded-lg p-4 hover:shadow-md dark:hover:shadow-lg transition-all duration-200 cursor-pointer group ${
+        isDragging ? 'ring-2 ring-blue-400 shadow-lg scale-105' : ''
+      }`}
       onClick={onClick}
     >
       <div className="space-y-3">
@@ -54,7 +66,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           <h3 className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 line-clamp-2">
             {task.title}
           </h3>
-          <span className={`px-2 py-1 text-xs rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
+          <span className={`px-2 py-1 text-xs rounded-full font-medium flex items-center gap-1 ${PRIORITY_COLORS[task.priority]}`}>
+            <AlertCircle className="h-3 w-3" />
             {task.priority}
           </span>
         </div>
@@ -68,8 +81,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             {task.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-md"
+                className="px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-md flex items-center gap-1"
               >
+                <Tag className="h-3 w-3" />
                 {tag}
               </span>
             ))}
