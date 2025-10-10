@@ -120,6 +120,57 @@ router.put('/:id', authenticateToken, [
   }
 });
 
+// Reorder columns
+
+// Reorder columns
+router.patch('/reorder', authenticateToken, [
+  body('projectId').isInt(),
+  body('columns').isArray()
+], async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { projectId, columns } = req.body;
+
+    const projectCheck = await client.query(
+      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
+      [projectId, req.user.id]
+    );
+
+    if (projectCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    await client.query('BEGIN');
+
+    for (let i = 0; i < columns.length; i++) {
+      await client.query(
+        'UPDATE task_columns SET position = $1 WHERE id = $2 AND project_id = $3',
+        [i + 1, columns[i].id, projectId]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    const result = await client.query(
+      'SELECT * FROM task_columns WHERE project_id = $1 ORDER BY position',
+      [projectId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Reorder columns error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
 // Delete column
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
@@ -127,8 +178,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     // Verify user owns the column through project ownership
     const columnCheck = await pool.query(
-      `SELECT tc.id, tc.project_id FROM task_columns tc 
-       JOIN projects p ON tc.project_id = p.id 
+      `SELECT tc.id, tc.project_id FROM task_columns tc
+       JOIN projects p ON tc.project_id = p.id
        WHERE tc.id = $1 AND p.owner_id = $2`,
       [id, req.user.id]
     );
@@ -148,8 +199,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const taskCount = parseInt(tasksCheck.rows[0].task_count);
 
     if (taskCount > 0) {
-      return res.status(400).json({ 
-        error: 'Cannot delete column with tasks. Please move or delete all tasks first.' 
+      return res.status(400).json({
+        error: 'Cannot delete column with tasks. Please move or delete all tasks first.'
       });
     }
 
@@ -162,8 +213,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const columnCount = parseInt(columnsCheck.rows[0].column_count);
 
     if (columnCount <= 1) {
-      return res.status(400).json({ 
-        error: 'Cannot delete the last column. A project must have at least one column.' 
+      return res.status(400).json({
+        error: 'Cannot delete the last column. A project must have at least one column.'
       });
     }
 
@@ -178,4 +229,5 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 export default router;

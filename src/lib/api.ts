@@ -146,6 +146,14 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  async reorderColumns(projectId: number, columns: { id: number; position: number }[]) {
+    return this.request('/columns/reorder', {
+      method: 'PATCH',
+      body: JSON.stringify({ projectId, columns }),
+    });
+  }
+
   // Task methods
   async getTasks(projectId: number) {
     return this.request(`/tasks/project/${projectId}`);
