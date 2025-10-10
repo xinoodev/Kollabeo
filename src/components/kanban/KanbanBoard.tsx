@@ -169,19 +169,21 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
-          {columns.map((column) => (
-            <div key={column.id} className="min-w-0">
-              <KanbanColumn
-                column={column}
-                tasks={tasks.filter(task => task.column_id === column.id)}
-                onTaskClick={onTaskClick}
-                onAddTask={onAddTask}
-                onEditColumn={onEditColumn}
-                onDeleteColumn={onDeleteColumn}
-              />
-            </div>
-          ))}
+        <div className="overflow-x-auto pb-6 -mx-1 scrollbar-custom">
+          <div className="flex gap-6 px-1">
+            {columns.map((column) => (
+              <div key={column.id} className="flex-shrink-0" style={{ width: 'calc((100% - 4.5rem) / 4)', minWidth: '280px' }}>
+                <KanbanColumn
+                  column={column}
+                  tasks={tasks.filter(task => task.column_id === column.id)}
+                  onTaskClick={onTaskClick}
+                  onAddTask={onAddTask}
+                  onEditColumn={onEditColumn}
+                  onDeleteColumn={onDeleteColumn}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         <DragOverlay>
