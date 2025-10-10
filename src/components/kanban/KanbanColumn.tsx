@@ -43,7 +43,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   }, [showMenu]);
 
   return (
-    <div className="rounded-lg p-4 flex flex-col transition-colors duration-300">
+    <div className="rounded-lg px-4 pb-4 flex flex-col transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <div
@@ -103,7 +103,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
       <div
         ref={setNodeRef}
-        className={`space-y-3 ${isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''} rounded-lg transition-colors duration-200 min-h-[600px]`}
+        className={`space-y-3 ${isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''} rounded-lg transition-colors duration-200 min-h-[630px]`}
       >
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (

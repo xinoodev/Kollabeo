@@ -156,7 +156,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Board</h3>
         <Button onClick={onAddColumn} size="sm" variant="secondary">
           <Plus className="mr-2 h-4 w-4" />
           Add Column
@@ -169,7 +168,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="overflow-x-auto pb-6 -mx-1 scrollbar-custom">
+        <div className="overflow-x-auto -mx-1 scrollbar-custom">
           <div className="flex gap-6 px-1">
             {columns.map((column) => (
               <div key={column.id} className="flex-shrink-0" style={{ width: 'calc((100% - 4.5rem) / 4)', minWidth: '280px' }}>

@@ -74,17 +74,17 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Header onCreateProject={() => setIsCreateProjectModalOpen(true)} />
       
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-8">
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 mb-4"
+            className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 mb-7"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Projects
           </button>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 mb-7">
             <div
               className="w-6 h-6 rounded-full"
               style={{ backgroundColor: project.color }}
