@@ -1,11 +1,11 @@
 
-import { Task, TaskColumn } from '../../types';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, MoreVertical, CreditCard as Edit2, Trash2, GripVertical } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { TaskCard } from './TaskCard';
 import React, { useEffect, useState, useRef } from 'react';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { Plus, MoreVertical, CreditCard as Edit2, Trash2, GripVertical } from 'lucide-react';
+import { Task, TaskColumn } from '../../types';
 
 interface KanbanColumnProps {
   column: TaskColumn;
@@ -14,7 +14,6 @@ interface KanbanColumnProps {
   onAddTask: (columnId: number) => void;
   onEditColumn: (column: TaskColumn) => void;
   onDeleteColumn: (column: TaskColumn) => void;
-  isAdminOrOwner: boolean;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -24,7 +23,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onAddTask,
   onEditColumn,
   onDeleteColumn,
-  isAdminOrOwner,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,7 +40,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       type: 'column',
       column,
     },
-    disabled: !isAdminOrOwner, // Deshabilitar drag si no es admin/owner
     transition: {
       duration: 200,
       easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
@@ -88,17 +85,13 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       }`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2 flex-1">
-            {isAdminOrOwner ? (
-              <button
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Drag to reorder column"
-              >
-                <GripVertical className="h-5 w-5" />
-              </button>
-            ) : (
-              <div className="w-7 h-7" /> // Espacio vacío para mantener alineación
-            )}
+            <button
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Drag to reorder column"
+            >
+              <GripVertical className="h-5 w-5" />
+            </button>
             <div
               className="w-3 h-3 rounded-full flex-shrink-0 transition-transform duration-200"
               style={{ backgroundColor: column.color }}
@@ -116,43 +109,41 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             >
               <Plus className="h-4 w-4" />
             </button>
-            {isAdminOrOwner && (
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title="Column options"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          onEditColumn(column);
-                          setShowMenu(false);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                      >
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Edit column
-                      </button>
-                      <button
-                        onClick={() => {
-                          onDeleteColumn(column);
-                          setShowMenu(false);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete column
-                      </button>
-                    </div>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Column options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        onEditColumn(column);
+                        setShowMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <Edit2 className="mr-2 h-4 w-4" />
+                      Edit column
+                    </button>
+                    <button
+                      onClick={() => {
+                        onDeleteColumn(column);
+                        setShowMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete column
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

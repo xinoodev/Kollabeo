@@ -15,7 +15,7 @@ import {
   MeasuringStrategy,
 } from '@dnd-kit/core';
 import React, { useEffect, useState } from 'react';
-import { Project, TaskColumn, Task, ProjectMember } from '../../types';
+import { Project, TaskColumn, Task } from '../../types';
 import { Button } from '../ui/Button';
 import { TaskCard } from './TaskCard';
 import { apiClient } from '../../lib/api';
@@ -44,11 +44,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskColumn | null>(null);
-  const [error, setError] = useState<string>('');
-  const [userRole, setUserRole] = useState<'owner' | 'admin' | 'member'>('member');
+  const [originalColumnId, setOriginalColumnId] = useState<number | null>(null);
   const { user } = useAuth();
-
-  const isAdminOrOwner = userRole === 'admin' || userRole === 'owner';
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -66,17 +63,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const fetchData = async () => {
     try {
+      // Fetch columns
       const columnsData = await apiClient.getColumns(project.id);
+
+      // Fetch tasks
       const tasksData = await apiClient.getTasks(project.id);
-      const membersData = await apiClient.getMembers(project.id);
-      
-      const isOwner = project.owner_id === user?.id;
-      if (isOwner) {
-        setUserRole('owner');
-      } else {
-        const currentMember = membersData.find((m: ProjectMember) => m.user_id === user?.id);
-        setUserRole(currentMember?.role || 'member');
-      }
 
       setColumns(columnsData || []);
       setTasks(tasksData || []);
@@ -91,23 +82,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     fetchData();
   }, [project.id, user, refreshTrigger]);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(''), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     
     // Check if dragging a column
     const column = columns.find(c => `column-${c.id}` === active.id);
     if (column) {
-      if (!isAdminOrOwner) {
-        setError('Only admins and owners can reorder columns');
-        return;
-      }
       setActiveColumn(column);
       return;
     }
@@ -116,6 +96,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const task = tasks.find(t => t.id === active.id);
     if (task) {
       setActiveTask(task);
+      setOriginalColumnId(task.column_id); // Guardar la columna original
     }
   };
 
@@ -164,29 +145,38 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
+    const draggedTask = activeTask;
+    
     setActiveTask(null);
     setActiveColumn(null);
     
-    if (!over) return;
+    if (!over) {
+      // Si no hay destino válido, revertir al estado original
+      if (draggedTask && originalColumnId) {
+        setTasks(prev => 
+          prev.map(task => 
+            task.id === draggedTask.id 
+              ? { ...task, column_id: originalColumnId }
+              : task
+          )
+        );
+      }
+      setOriginalColumnId(null);
+      return;
+    }
 
     const activeId = active.id;
     const overId = over.id;
-
-    if (activeId === overId) return;
 
     // Handle column reordering
     const activeColumnMatch = String(activeId).match(/^column-(\d+)$/);
     const overColumnMatch = String(overId).match(/^column-(\d+)$/);
 
     if (activeColumnMatch && overColumnMatch) {
-      if (!isAdminOrOwner) {
-        setError('Only admins and owners can reorder columns');
-        fetchData();
-        return;
-      }
-
       const activeColumnId = Number(activeColumnMatch[1]);
       const overColumnId = Number(overColumnMatch[1]);
+
+      if (activeColumnId === overColumnId) return;
 
       const oldIndex = columns.findIndex(c => c.id === activeColumnId);
       const newIndex = columns.findIndex(c => c.id === overColumnId);
@@ -202,19 +192,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           }));
 
           await apiClient.reorderColumns(project.id, reorderedColumns);
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error reordering columns:', error);
-          setError(error.message || 'Failed to reorder columns');
           // Revert the optimistic update
           fetchData();
         }
       }
+      setOriginalColumnId(null);
       return;
     }
 
-    // Handle task reordering
-    const activeTask = tasks.find(t => t.id === activeId);
-    if (activeTask) {
+    // Handle task movement
+    if (draggedTask && originalColumnId !== null) {
       const overTask = tasks.find(t => t.id === overId);
       const overColumnMatch = String(overId).match(/^column-(\d+)$/);
       
@@ -226,18 +215,36 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         targetColumnId = Number(overColumnMatch[1]);
       }
 
-      if (targetColumnId && activeTask.column_id !== targetColumnId) {
+      // Verificar si la columna realmente cambió
+      if (targetColumnId !== undefined && originalColumnId !== targetColumnId) {
         try {
-          await apiClient.updateTask(Number(activeId), { 
+          await apiClient.updateTask(draggedTask.id, { 
             column_id: targetColumnId
           });
-        } catch (error: any) {
+          console.log(`Task ${draggedTask.id} moved from column ${originalColumnId} to ${targetColumnId}`);
+        } catch (error) {
           console.error('Error updating task:', error);
-          setError(error.message || 'Failed to move task');
           // Revert the optimistic update
-          fetchData();
+          setTasks(prev => 
+            prev.map(task => 
+              task.id === draggedTask.id 
+                ? { ...task, column_id: originalColumnId }
+                : task
+            )
+          );
         }
+      } else if (targetColumnId === undefined) {
+        // Si no hay destino válido, revertir
+        setTasks(prev => 
+          prev.map(task => 
+            task.id === draggedTask.id 
+              ? { ...task, column_id: originalColumnId }
+              : task
+          )
+        );
       }
+      
+      setOriginalColumnId(null);
     }
   };
 
@@ -251,12 +258,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <Button onClick={onAddColumn} size="sm" variant="secondary">
           <Plus className="mr-2 h-4 w-4" />
@@ -276,7 +277,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           <SortableContext 
             items={columns.map(col => `column-${col.id}`)} 
             strategy={horizontalListSortingStrategy}
-            disabled={!isAdminOrOwner}
           >
             <div className="flex gap-6 px-1">
               {columns.map((column) => (
@@ -291,7 +291,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onAddTask={onAddTask}
                     onEditColumn={onEditColumn}
                     onDeleteColumn={onDeleteColumn}
-                    isAdminOrOwner={isAdminOrOwner}
                   />
                 </div>
               ))}
@@ -308,7 +307,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               <TaskCard task={activeTask} onClick={() => {}} />
             </div>
           )}
-          {activeColumn && isAdminOrOwner && (
+          {activeColumn && (
             <div style={{ width: '280px' }}>
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-400">
                 <KanbanColumn
@@ -318,7 +317,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   onAddTask={() => {}}
                   onEditColumn={() => {}}
                   onDeleteColumn={() => {}}
-                  isAdminOrOwner={isAdminOrOwner}
                 />
               </div>
             </div>
