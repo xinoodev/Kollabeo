@@ -7,7 +7,8 @@ import { TaskDetailsModal } from '../components/tasks/TaskDetailsModal';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { CreateColumnModal } from '../components/columns/CreateColumnModal';
 import { EditColumnModal } from '../components/columns/EditColumnModal';
-import { ArrowLeft } from 'lucide-react';
+import { MembersModal } from '../components/members/MembersModal';
+import { ArrowLeft, Users } from 'lucide-react';
 import { apiClient } from '../lib/api';
 
 interface ProjectViewProps {
@@ -21,6 +22,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   const [isCreateColumnModalOpen, setIsCreateColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number>(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<TaskColumn | null>(null);
@@ -84,17 +86,26 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
             Back to Projects
           </button>
           
-          <div className="flex items-center space-x-3 mb-7">
-            <div
-              className="w-6 h-6 rounded-full"
-              style={{ backgroundColor: project.color }}
-            ></div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
-              {project.description && (
-                <p className="text-gray-600 dark:text-gray-300 mt-1">{project.description}</p>
-              )}
+          <div className="flex items-center justify-between mb-7">
+            <div className="flex items-center space-x-3">
+              <div
+                className="w-6 h-6 rounded-full"
+                style={{ backgroundColor: project.color }}
+              ></div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
+                {project.description && (
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">{project.description}</p>
+                )}
+              </div>
             </div>
+            <button
+              onClick={() => setIsMembersModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+            >
+              <Users className="h-4 w-4" />
+              <span>Members</span>
+            </button>
           </div>
         </div>
 
@@ -143,6 +154,12 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
         onClose={() => setIsEditColumnModalOpen(false)}
         onSuccess={handleColumnUpdate}
         column={selectedColumn}
+      />
+
+      <MembersModal
+        isOpen={isMembersModalOpen}
+        onClose={() => setIsMembersModalOpen(false)}
+        project={project}
       />
     </>
   );

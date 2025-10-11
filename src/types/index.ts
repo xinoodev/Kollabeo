@@ -32,7 +32,6 @@ export interface Task {
   column_id: number;
   project_id: number;
   assignee_id?: number;
-  assignee_name?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   due_date?: string;
   position: number;
@@ -56,7 +55,9 @@ export interface ProjectMember {
   user_id: number;
   role: 'owner' | 'admin' | 'member';
   joined_at: string;
-  user?: User;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
 }
 
 export type DragEndEvent = {

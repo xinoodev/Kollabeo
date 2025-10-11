@@ -178,6 +178,31 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Member methods
+  async getMembers(projectId: number) {
+    return this.request(`/members/project/${projectId}`);
+  }
+
+  async addMember(projectId: number, email: string, role: 'admin' | 'member') {
+    return this.request('/members', {
+      method: 'POST',
+      body: JSON.stringify({ project_id: projectId, email, role }),
+    });
+  }
+
+  async updateMemberRole(memberId: number, role: 'admin' | 'member') {
+    return this.request(`/members/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async removeMember(memberId: number) {
+    return this.request(`/members/${memberId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
