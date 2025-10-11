@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import columnRoutes from './routes/columns.js';
 import taskRoutes from './routes/tasks.js';
+import memberRoutes from './routes/members.js';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/columns', columnRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/members', memberRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -47,6 +49,6 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 TaskForge server running on port ${PORT}`);
+  console.log(`🚀 Kollabeo server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });

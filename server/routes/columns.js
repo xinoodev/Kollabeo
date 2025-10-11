@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { checkProjectAccess } from '../middleware/permissions.js';
 
 const router = express.Router();
 
@@ -10,14 +11,9 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    // Verify user owns the project
-    const projectCheck = await pool.query(
-      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
-      [projectId, req.user.id]
-    );
-
-    if (projectCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const result = await pool.query(
@@ -46,14 +42,9 @@ router.post('/', authenticateToken, [
 
     const { name, project_id, color, position } = req.body;
 
-    // Verify user owns the project
-    const projectCheck = await pool.query(
-      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
-      [project_id, req.user.id]
-    );
-
-    if (projectCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id, 'admin');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Only admins and owners can create columns' });
     }
 
     // Get the next position if not provided
@@ -92,16 +83,19 @@ router.put('/:id', authenticateToken, [
     const { id } = req.params;
     const { name, color, position } = req.body;
 
-    // Verify user owns the column through project ownership
     const columnCheck = await pool.query(
-      `SELECT tc.id FROM task_columns tc 
-       JOIN projects p ON tc.project_id = p.id 
-       WHERE tc.id = $1 AND p.owner_id = $2`,
-      [id, req.user.id]
+      'SELECT project_id FROM task_columns WHERE id = $1',
+      [id]
     );
 
     if (columnCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Column not found' });
+    }
+
+    const projectId = columnCheck.rows[0].project_id;
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Only admins and owners can update columns' });
     }
 
     const result = await pool.query(
@@ -136,13 +130,9 @@ router.patch('/reorder', authenticateToken, [
 
     const { projectId, columns } = req.body;
 
-    const projectCheck = await client.query(
-      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
-      [projectId, req.user.id]
-    );
-
-    if (projectCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Only admins and owners can reorder columns' });
     }
 
     await client.query('BEGIN');
@@ -150,7 +140,7 @@ router.patch('/reorder', authenticateToken, [
     for (let i = 0; i < columns.length; i++) {
       await client.query(
         'UPDATE task_columns SET position = $1 WHERE id = $2 AND project_id = $3',
-        [i + 1, columns[i].id, projectId]
+        [i, columns[i].id, projectId]
       );
     }
 
@@ -176,12 +166,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verify user owns the column through project ownership
     const columnCheck = await pool.query(
-      `SELECT tc.id, tc.project_id FROM task_columns tc
-       JOIN projects p ON tc.project_id = p.id
-       WHERE tc.id = $1 AND p.owner_id = $2`,
-      [id, req.user.id]
+      'SELECT project_id FROM task_columns WHERE id = $1',
+      [id]
     );
 
     if (columnCheck.rows.length === 0) {
@@ -189,6 +176,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     const projectId = columnCheck.rows[0].project_id;
+
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Only admins and owners can delete columns' });
+    }
 
     // Check if there are tasks in this column
     const tasksCheck = await pool.query(

@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { checkProjectAccess } from '../middleware/permissions.js';
 
 const router = express.Router();
 
@@ -9,10 +10,11 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT p.*, u.full_name as owner_name 
-       FROM projects p 
-       JOIN users u ON p.owner_id = u.id 
-       WHERE p.owner_id = $1 
+      `SELECT DISTINCT p.*, u.full_name as owner_name
+       FROM projects p
+       JOIN users u ON p.owner_id = u.id
+       LEFT JOIN project_members pm ON p.id = pm.project_id
+       WHERE p.owner_id = $1 OR pm.user_id = $1
        ORDER BY p.created_at DESC`,
       [req.user.id]
     );
@@ -54,9 +56,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    const { hasAccess } = await checkProjectAccess(req.user.id, id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const result = await pool.query(
-      'SELECT * FROM projects WHERE id = $1 AND owner_id = $2',
-      [id, req.user.id]
+      'SELECT * FROM projects WHERE id = $1',
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -84,9 +91,14 @@ router.put('/:id', authenticateToken, [
     const { id } = req.params;
     const { name, description, color } = req.body;
 
+    const { hasAccess, role } = await checkProjectAccess(req.user.id, id, 'admin');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Only admins and owners can update projects' });
+    }
+
     const result = await pool.query(
-      'UPDATE projects SET name = COALESCE($1, name), description = COALESCE($2, description), color = COALESCE($3, color) WHERE id = $4 AND owner_id = $5 RETURNING *',
-      [name, description, color, id, req.user.id]
+      'UPDATE projects SET name = COALESCE($1, name), description = COALESCE($2, description), color = COALESCE($3, color) WHERE id = $4 RETURNING *',
+      [name, description, color, id]
     );
 
     if (result.rows.length === 0) {

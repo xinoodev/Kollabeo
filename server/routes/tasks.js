@@ -51,14 +51,9 @@ router.post('/', authenticateToken, [
 
     const { title, description, column_id, project_id, priority, due_date, tags } = req.body;
 
-    // Verify user owns the project
-    const projectCheck = await pool.query(
-      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
-      [project_id, req.user.id]
-    );
-
-    if (projectCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const result = await pool.query(
@@ -79,16 +74,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { title, description, column_id, priority, due_date, tags, position, assignee_id } = req.body;
 
-    // Verify user owns the task through project ownership
     const taskCheck = await pool.query(
-      `SELECT t.id FROM tasks t 
-       JOIN projects p ON t.project_id = p.id 
-       WHERE t.id = $1 AND p.owner_id = $2`,
-      [id, req.user.id]
+      'SELECT project_id FROM tasks WHERE id = $1',
+      [id]
     );
 
     if (taskCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const projectId = taskCheck.rows[0].project_id;
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const result = await pool.query(
@@ -117,13 +115,24 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verify user owns the task through project ownership
+    const taskCheck = await pool.query(
+      'SELECT project_id FROM tasks WHERE id = $1',
+      [id]
+    );
+
+    if (taskCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const projectId = taskCheck.rows[0].project_id;
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const result = await pool.query(
-      `DELETE FROM tasks 
-       WHERE id = $1 AND project_id IN (
-         SELECT id FROM projects WHERE owner_id = $2
-       ) RETURNING *`,
-      [id, req.user.id]
+      'DELETE FROM tasks WHERE id = $1 RETURNING *',
+      [id]
     );
 
     if (result.rows.length === 0) {
