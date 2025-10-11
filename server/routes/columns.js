@@ -47,7 +47,6 @@ router.post('/', authenticateToken, [
       return res.status(403).json({ error: 'Only admins and owners can create columns' });
     }
 
-    // Get the next position if not provided
     let columnPosition = position;
     if (columnPosition === undefined) {
       const positionResult = await pool.query(
@@ -130,7 +129,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only admins and owners can delete columns' });
     }
 
-    // Check if column has tasks
     const tasksCheck = await pool.query(
       'SELECT COUNT(*) as count FROM tasks WHERE column_id = $1',
       [id]

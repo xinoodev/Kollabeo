@@ -82,6 +82,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
     const projectId = taskCheck.rows[0].project_id;
+    
     const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
