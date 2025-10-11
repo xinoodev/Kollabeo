@@ -1,7 +1,9 @@
+
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { checkProjectAccess } from '../middleware/permissions.js';
 
 const router = express.Router();
 
@@ -10,14 +12,10 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    // Verify user owns the project
-    const projectCheck = await pool.query(
-      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
-      [projectId, req.user.id]
-    );
-
-    if (projectCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
+    // Verify user has access to the project (owner or member)
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const result = await pool.query(
@@ -125,19 +123,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     const projectId = taskCheck.rows[0].project_id;
-    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'Only admins and owners can delete tasks' });
     }
 
-    const result = await pool.query(
-      'DELETE FROM tasks WHERE id = $1 RETURNING *',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
+    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
