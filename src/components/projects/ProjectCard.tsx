@@ -9,6 +9,9 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
+  const memberCount = project.member_count || 1;
+  const memberText = memberCount === 1 ? '1 member' : `${memberCount} members`;
+
   return (
     <div
       onClick={onClick}
@@ -39,7 +42,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) =>
           </div>
           <div className="flex items-center space-x-1">
             <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <span>1 member</span>
+            <span>{memberText}</span>
           </div>
         </div>
       </div>

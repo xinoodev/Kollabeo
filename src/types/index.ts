@@ -15,6 +15,7 @@ export interface Project {
   owner_id: number;
   created_at: string;
   updated_at: string;
+  member_count?: number;
 }
 
 export interface TaskColumn {
