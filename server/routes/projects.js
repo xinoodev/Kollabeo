@@ -133,4 +133,39 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Get member project role
+router.get('/:id/role', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user is owner
+    const ownerCheck = await pool.query(
+      'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
+      [id, req.user.id]
+    );
+
+    if (ownerCheck.rows.length > 0) {
+      return res.json({ role: 'owner', isOwner: true });
+    }
+
+    // Check if user is a member
+    const memberCheck = await pool.query(
+      'SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2',
+      [id, req.user.id]
+    );
+
+    if (memberCheck.rows.length > 0) {
+      return res.json({ 
+        role: memberCheck.rows[0].role, 
+        isOwner: false 
+      });
+    }
+
+    return res.status(403).json({ error: 'Access denied' });
+  } catch (error) {
+    console.error('Get project role error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

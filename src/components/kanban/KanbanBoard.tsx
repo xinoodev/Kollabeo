@@ -28,6 +28,7 @@ interface KanbanBoardProps {
   onEditColumn: (column: TaskColumn) => void;
   onDeleteColumn: (column: TaskColumn) => void;
   refreshTrigger: number;
+  canManageProject: boolean;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -38,6 +39,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onEditColumn,
   onDeleteColumn,
   refreshTrigger,
+  canManageProject,
 }) => {
   const [columns, setColumns] = useState<TaskColumn[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -254,12 +256,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button onClick={onAddColumn} size="sm" variant="secondary">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Column
-        </Button>
-      </div>
+      {canManageProject && (
+        <div className="flex items-center justify-between">
+          <Button onClick={onAddColumn} size="sm" variant="secondary">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Column
+          </Button>
+        </div>
+      )}
 
       <DndContext
         sensors={sensors}

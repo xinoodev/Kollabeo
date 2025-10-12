@@ -203,6 +203,12 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Role methods
+  async getProjectMemberRole(projectId: number): Promise<{ role: string; isOwner: boolean }> {
+    const data = await this.request(`/projects/${projectId}/role`);
+    return data;
+  }
 }
 
 export const apiClient = new ApiClient();

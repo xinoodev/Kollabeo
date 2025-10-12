@@ -13,6 +13,7 @@ interface TaskDetailsModalProps {
   onClose: () => void;
   task: Task | null;
   onUpdate: () => void;
+  canManageProject: boolean;
 }
 
 const PRIORITY_COLORS = {
@@ -27,6 +28,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   onClose,
   task,
   onUpdate,
+  canManageProject,
 }) => {
   const [loading, setLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false);
@@ -143,15 +145,17 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               </div>
             )}
             
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Delete
-            </Button>
+            {canManageProject && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDelete}
+                disabled={loading}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Delete
+              </Button>
+            )}
           </div>
 
           {task.description && (
