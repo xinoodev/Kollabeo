@@ -8,7 +8,9 @@ import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { CreateColumnModal } from '../components/columns/CreateColumnModal';
 import { EditColumnModal } from '../components/columns/EditColumnModal';
 import { MembersModal } from '../components/members/MembersModal';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ProjectSettingsModal } from '../components/projects/ProjectSettingsModal';
+import { ArrowLeft, Users, Settings } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../lib/api';
 
 interface ProjectViewProps {
@@ -16,17 +18,26 @@ interface ProjectViewProps {
   onBack: () => void;
 }
 
-export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => {
+export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProject, onBack }) => {
+  const [project, setProject] = useState<Project>(initialProject);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isTaskDetailsModalOpen, setIsTaskDetailsModalOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   const [isCreateColumnModalOpen, setIsCreateColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number>(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<TaskColumn | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { user } = useAuth();
+
+  const isOwner = user?.id === project.owner_id;
+
+  useEffect(() => {
+    setProject(initialProject);
+  }, [initialProject]);
   const [userRole, setUserRole] = useState<{ role: string; isOwner: boolean } | null>(null);
   const [loadingRole, setLoadingRole] = useState(true);
 
@@ -124,13 +135,24 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => setIsMembersModalOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-              >
-                <Users className="h-4 w-4" />
-                <span>Members</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setIsMembersModalOpen(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Members</span>
+                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors duration-200"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -187,6 +209,16 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project, onBack }) => 
         isOpen={isMembersModalOpen}
         onClose={() => setIsMembersModalOpen(false)}
         project={project}
+      />
+
+      <ProjectSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        project={project}
+        onUpdate={(updatedProject) => {
+          setProject(updatedProject);
+        }}
+        onDelete={onBack}
       />
     </>
   );
