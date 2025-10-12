@@ -65,6 +65,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    const { hasAccess } = await checkProjectAccess(req.user.id, id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const result = await pool.query(
       `SELECT 
         p.*,
@@ -83,9 +88,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const project = result.rows[0];
-
-    // ... resto del código de verificación de permisos
-
     res.json(project);
   } catch (error) {
     console.error('Get project error:', error);
