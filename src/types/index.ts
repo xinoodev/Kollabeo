@@ -32,6 +32,7 @@ export interface Task {
   column_id: number;
   project_id: number;
   assignee_id?: number;
+  assignee_name?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   due_date?: string;
   position: number;

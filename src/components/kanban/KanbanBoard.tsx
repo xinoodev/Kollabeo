@@ -96,7 +96,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const task = tasks.find(t => t.id === active.id);
     if (task) {
       setActiveTask(task);
-      setOriginalColumnId(task.column_id); // Guardar la columna original
+      setOriginalColumnId(task.column_id);
     }
   };
 
@@ -151,7 +151,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setActiveColumn(null);
     
     if (!over) {
-      // Si no hay destino válido, revertir al estado original
       if (draggedTask && originalColumnId) {
         setTasks(prev => 
           prev.map(task => 
@@ -215,13 +214,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         targetColumnId = Number(overColumnMatch[1]);
       }
 
-      // Verificar si la columna realmente cambió
       if (targetColumnId !== undefined && originalColumnId !== targetColumnId) {
         try {
           await apiClient.updateTask(draggedTask.id, { 
             column_id: targetColumnId
           });
-          console.log(`Task ${draggedTask.id} moved from column ${originalColumnId} to ${targetColumnId}`);
         } catch (error) {
           console.error('Error updating task:', error);
           // Revert the optimistic update
@@ -234,7 +231,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           );
         }
       } else if (targetColumnId === undefined) {
-        // Si no hay destino válido, revertir
         setTasks(prev => 
           prev.map(task => 
             task.id === draggedTask.id 

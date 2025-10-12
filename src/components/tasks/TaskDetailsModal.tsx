@@ -48,6 +48,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
         assignee_id: user.id
       });
       onUpdate();
+      onClose();
     } catch (error) {
       console.error('Error assigning task:', error);
     } finally {
@@ -64,6 +65,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
         assignee_id: null
       });
       onUpdate();
+      onClose();
     } catch (error) {
       console.error('Error unassigning task:', error);
     } finally {
