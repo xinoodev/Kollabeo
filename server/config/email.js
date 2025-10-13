@@ -114,6 +114,51 @@ export const emailTemplate = {
                 </div>
             </div>
         `
+    }),
+    passwordChanged: (userName) => ({
+        subject: 'Your Kollabeo password has been changed',
+        html: `
+            <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
+                </div>
+
+                <div style="padding: 40px 20px; background: #ffffff;">
+                    <h2 style="color: #1F2937; margin: 0 0 20px 0;">Password Changed Successfully</h2>
+
+                    <p style="color: #4B5563; line-height: 1.6; margin: 0 0 20px 0;">
+                        Hi ${userName},
+                    </p>
+
+                    <p style="color: #4B5563; line-height: 1.6; margin: 0 0 20px 0;">
+                        This is a confirmation that your password has been successfully changed.
+                    </p>
+
+                    <div style="background: #F0FDF4; border-left: 4px solid #10B981; padding: 16px; margin: 20px 0;">
+                        <p style="color: #065F46; margin: 0; font-weight: 600;">
+                            ✓ Password Updated
+                        </p>
+                        <p style="color: #047857"; margin: 8px 0 0 0; font-size: 14px;>
+                            Your password was changed on ${new Date().toLocaleString('en-US', {
+                                dateStyle: 'full',
+                                timeStyle: 'short',
+                            })}.
+                        </p>
+                    </div>
+
+                    <p style="color: #4B5563; line-height: 1.6; margin: 20px 0 0 0;">
+                        If you didn't make this change, please contact support immediately or reset your password.
+                    </p>
+                </div>
+
+                <div style="background: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
+                    <p style="color: #6B7280; font-size: 14px; margin: 0;">
+                        © ${new Date().getFullYear()} Kollabeo. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        `
     })
 };
 
@@ -198,3 +243,56 @@ export const sendVerificationEmail = async (email, token, userName) => {
         return { success: false, error: error.message };
     }
 };
+
+export const sendPasswordChangedEmail = async (email, userName) => {
+    try {
+        console.log('🔄 Attempting to send password changed email to:', email);
+
+        const emailTransporter = await getTransporter();
+        
+        const mailOptions = {
+            from: process.env.FROM_EMAIL || 'noreply@kollabeo.com',
+            to: email,
+           ...emailTemplate.passwordChanged(userName)
+        };
+
+        console.log('📬 Sending password changed notification:', {
+            from: mailOptions.from,
+            to: mailOptions.to,
+            subject: mailOptions.subject
+        });
+
+        const info = await emailTransporter.sendMail(mailOptions);
+        
+        console.log('✅ Password changed email sent:', {
+            messageId: info.messageId,
+            accepted: info.accepted
+        });
+        
+        const isTestMode = info.envelope && info.envelope.from && info.envelope.from.includes('ethereal.email');
+
+        if (isTestMode) {
+            const previewUrl = nodemailer.getTestMessageUrl(info);
+            console.log('🧪 TEST MODE: Password changed email sent to test service');
+            console.log('👀 Preview URL: %s', previewUrl);
+
+            return {
+                success: true,
+                messageId: info.messageId,
+                previewUrl,
+                isTestMode: true
+            };
+        } else {
+            console.log('✅ Real password changed email sent to:', email);
+
+            return {
+                success: true,
+                messageId: info.messageId,
+                isTestMode: false
+            };
+        }
+    } catch (error) {
+        console.error('❌ Error sending password changed email:', error);
+        return { success: false, error: error.message };
+    }
+}

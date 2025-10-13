@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sendPasswordChangedEmail } from '../config/email.js';
 
 const router = express.Router();
 
@@ -117,10 +118,16 @@ router.put('/password', [
     const saltRounds = 10;
     const newPasswordHash = await bcrypt.hash(new_password, saltRounds);
 
-    await pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+    const updatedUser = await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING email, full_name',
       [newPasswordHash, req.user.id]
     );
+
+    const { email, full_name } = updatedUser.rows[0];
+
+    sendPasswordChangedEmail(email, full_name).catch(err => {
+        console.error('Failed to send password changed email:', err);
+    });
 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
