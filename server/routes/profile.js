@@ -88,45 +88,45 @@ router.put('/username', [
 });
 
 router.put('/password', [
-    authenticateToken,
-    body('current_password').exists,
-    body('new_password').isLength({ min: 6 })
+  authenticateToken,
+  body('current_password').exists(),
+  body('new_password').isLength({ min: 6 })
 ], async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const { current_password, new_password } = req.body;
-
-        const userResult = await pool.query(
-            'SELECT password_hash FROM users WHERE id = $1',
-            [req.user.id]
-        );
-
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const isValidPassword = await bcrypt.compare(current_password, userResult.rows[0].password_hash);
-        if (!isValidPassword) {
-            return res.status(400).json({ error: 'Current password is incorrect' });
-        }
-
-        const saltRounds = 10;
-        const newPasswordHash = await bcrypt.hash(new_password, saltRounds);
-
-        await pool.query(
-            'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            [newPasswordHash, req.user.id]
-        );
-
-        res.json({ message: 'Password updated successfully' });
-    } catch (error) {
-        console.error('Update password error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    const { current_password, new_password } = req.body;
+
+    const userResult = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isValidPassword = await bcrypt.compare(current_password, userResult.rows[0].password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(new_password, saltRounds);
+
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [newPasswordHash, req.user.id]
+    );
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Update password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 router.put('/avatar', [

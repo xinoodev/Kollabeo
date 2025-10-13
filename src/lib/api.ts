@@ -9,7 +9,7 @@ class ApiClient {
 
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -21,16 +21,30 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Request failed');
+        let errorMessage = 'Request failed';
+        try {
+          const data = await response.json();
+          if (data.errors && Array.isArray(data.errors)) {
+            errorMessage = data.errors.map((e: any) => e.msg).join(', ');
+          } else {
+            errorMessage = data.error || errorMessage;
+          }
+        } catch {
+          errorMessage = `Request failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('API request failed:', error);
-      throw error;
+      if (error.message) {
+        throw error;
+      }
+      throw new Error('Network error. Please check if the server is running.');
     }
   }
 
