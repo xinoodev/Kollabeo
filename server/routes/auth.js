@@ -204,7 +204,7 @@ router.post('/login', [
 
     // Find user
     const result = await pool.query(
-      'SELECT id, email, password_hash, full_name, username, email_verified FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, full_name, username, avatar_url, email_verified FROM users WHERE email = $1',
       [email]
     );
 
@@ -244,6 +244,7 @@ router.post('/login', [
         email: user.email,
         full_name: user.full_name,
         username: user.username,
+        avatar_url: user.avatar_url,
         email_verified: user.email_verified
       }
     });
