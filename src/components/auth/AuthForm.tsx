@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EmailVerificationScreen } from './EmailVerificationScreen';
 import { EmailVerificationPage } from './EmailVerificationPage';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ThemeSelector } from '../ui/ThemeSelector';
@@ -33,6 +34,7 @@ export const AuthForm: React.FC = () => {
   }
   const [isLogin, setIsLogin] = useState(true);
   const [showVerificationScreen, setShowVerificationScreen] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -140,6 +142,17 @@ export const AuthForm: React.FC = () => {
               required
               placeholder="Enter your password"
             />
+            {isLogin && (
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-200"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
           </div>
 
           <Button
@@ -174,6 +187,11 @@ export const AuthForm: React.FC = () => {
             </button>
           </div>
         </form>
+
+        <ForgotPasswordModal
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+        />
       </div>
     </div>
   );

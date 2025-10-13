@@ -17,6 +17,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>;
   verifyEmail: (token: string) => Promise<any>;
   resendVerification: (email: string) => Promise<any>;
+  requestPasswordReset: (email: string) => Promise<any>;
+  resetPassword: (token: string, password: string) => Promise<any>;
   signOut: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -99,6 +101,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      const response = await apiClient.requestPasswordReset(email);
+      return { data: response, error: null };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  };
+
+  const resetPassword = async (token: string, password: string) => {
+    try {
+      const response = await apiClient.resetPassword(token, password);
+      setUser(response.user);
+      return { data: response, error: null };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  };
+
   const signOut = () => {
     apiClient.logout();
     setUser(null);
@@ -120,6 +141,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     verifyEmail,
     resendVerification,
+    requestPasswordReset,
+    resetPassword,
     signOut,
     refreshUser,
   };

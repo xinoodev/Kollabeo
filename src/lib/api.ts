@@ -84,6 +84,27 @@ class ApiClient {
     });
   }
 
+  async requestPasswordReset(email: string) {
+    return this.request('/auth/request-password-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string) {
+    const data = await this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+
+    if (data.token) {
+      this.token = data.token;
+      localStorage.setItem('token', data.token);
+    }
+
+    return data;
+  }
+
   async login(email: string, password: string) {
     const data = await this.request('/auth/login', {
       method: 'POST',

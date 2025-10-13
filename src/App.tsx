@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthForm } from './components/auth/AuthForm';
+import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectView } from './pages/ProjectView';
 import { Profile } from './pages/Profile';
@@ -20,10 +21,17 @@ function AppContent() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
-    if (token && window.location.pathname === '/verify-email') {
+    if (token && (window.location.pathname === '/verify-email' || window.location.pathname === '/reset-password')) {
       return;
     }
   }, []);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('token');
+
+  if (resetToken && window.location.pathname === '/reset-password') {
+    return <ResetPasswordPage token={resetToken} />;
+  }
 
   if (loading) {
     return (
