@@ -1,5 +1,40 @@
--- TaskForge Database Schema
--- Drop existing tables if they exist (for development)
+/*
+  # Kollabeo Initial Database Schema with Authentication
+
+  1. New Tables
+    - `users` - User accounts with authentication fields
+      - `id` (serial, primary key)
+      - `email` (varchar, unique, not null)
+      - `password_hash` (varchar, not null)
+      - `full_name` (varchar, not null)
+      - `username` (varchar, unique, nullable)
+      - `avatar_url` (varchar, nullable)
+      - `email_verified` (boolean, default false)
+      - `email_verification_token` (varchar, nullable)
+      - `email_verification_expires` (timestamp, nullable)
+      - `password_reset_token` (varchar, nullable)
+      - `password_reset_expires` (timestamp, nullable)
+      - `created_at` (timestamp)
+      - `updated_at` (timestamp)
+    
+    - `projects` - Project management
+    - `task_columns` - Kanban columns
+    - `tasks` - Task items
+    - `task_comments` - Comments on tasks
+    - `project_members` - Project membership
+
+  2. Security
+    - Indexes for performance on email, tokens, and foreign keys
+    - Triggers for automatic timestamp updates
+    - Automatic default column creation for new projects
+
+  3. Notes
+    - Email verification required before login
+    - Password reset tokens expire after 1 hour
+    - Email verification tokens expire after 24 hours
+*/
+
+-- Drop existing tables if they exist (for clean setup)
 DROP TABLE IF EXISTS task_comments CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS task_columns CASCADE;
@@ -7,13 +42,19 @@ DROP TABLE IF EXISTS project_members CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- Create users table
+-- Create users table with authentication fields
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255) NOT NULL,
+  username VARCHAR(50) UNIQUE,
   avatar_url VARCHAR(500),
+  email_verified BOOLEAN DEFAULT FALSE,
+  email_verification_token VARCHAR(255),
+  email_verification_expires TIMESTAMP,
+  password_reset_token VARCHAR(255),
+  password_reset_expires TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -75,6 +116,9 @@ CREATE TABLE project_members (
 );
 
 -- Create indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_email_verification_token ON users(email_verification_token);
+CREATE INDEX idx_users_password_reset_token ON users(password_reset_token);
 CREATE INDEX idx_projects_owner_id ON projects(owner_id);
 CREATE INDEX idx_task_columns_project_id ON task_columns(project_id);
 CREATE INDEX idx_tasks_column_id ON tasks(column_id);
@@ -129,37 +173,8 @@ CREATE TRIGGER create_default_columns_trigger
   EXECUTE PROCEDURE create_default_columns();
 
 -- Insert sample data for development
-INSERT INTO users (email, password_hash, full_name) VALUES
-('demo@taskforge.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Demo User');
+INSERT INTO users (email, password_hash, full_name, email_verified) VALUES
+('demo@taskforge.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Demo User', TRUE);
 
 INSERT INTO projects (name, description, color, owner_id) VALUES
 ('Sample Project', 'A sample project to get you started', '#3B82F6', 1);
-
--- Add email verification columns to users table
-ALTER TABLE users 
-ADD COLUMN email_verified BOOLEAN DEFAULT FALSE,
-ADD COLUMN email_verification_token VARCHAR(255),
-ADD COLUMN email_verification_expires TIMESTAMP;
-
--- Create index for fast token lookups
-CREATE INDEX idx_users_verification_token ON users(email_verification_token);
-
--- Mark existing users as verified (backward compatibility)
-UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;
-
--- Set default to false for new users
-ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;
-
--- Add username column to users table if it doesn't exist
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'users' AND column_name = 'username'
-  ) THEN
-    ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE;
-  END IF;
-END $$;
-
--- Create index for fast username lookups
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
