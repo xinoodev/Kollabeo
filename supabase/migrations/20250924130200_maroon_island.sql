@@ -149,3 +149,17 @@ UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;
 
 -- Set default to false for new users
 ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;
+
+-- Add username column to users table if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'username'
+  ) THEN
+    ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE;
+  END IF;
+END $$;
+
+-- Create index for fast username lookups
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
