@@ -40,9 +40,9 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
           {/* Logo - Left side */}
           <div className="flex items-center space-x-4">
             <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TF</span>
+              <span className="text-white font-bold text-sm">K</span>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">TaskForge</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Kollabeo</h1>
           </div>
 
           {/* Actions - Right side */}
@@ -57,11 +57,19 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
               >
-                <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-blue-600" />
-                </div>
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user?.username || user?.full_name}
+                    className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                  />
+                ) : (
+                  <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-blue-600" />
+                  </div>
+                )}
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {user?.full_name || user?.email}
+                  {user?.username || user?.full_name}
                 </span>
               </button>
 
