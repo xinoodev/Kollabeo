@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { sendVerificationEmail } from '../config/email.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
 
 const router = express.Router();
 
@@ -257,6 +257,111 @@ router.post('/login', [
 // Get current user
 router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user });
+});
+
+// Request password reset
+router.post('/request-password-reset', [
+  body('email').isEmail().normalizeEmail()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    const result = await pool.query(
+      'SELECT id, email, full_name FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        message: "If an account exists with this email, you will receive password reset instructions."
+      });
+    }
+
+    const user = result.rows[0];
+
+    const resetToken = generateVerificationToken();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await pool.query(
+      'UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3',
+      [resetToken, resetExpires, user.id]
+    );
+
+    const emailResult = await sendPasswordResetEmail(email, resetToken, user.full_name);
+
+    if (!emailResult.success) {
+      console.error('Failed to send password reset email:', emailResult.error);
+      return res.status(500).json({ error: 'Failed to send password reset email' });
+    }
+
+    res.json({
+      message: "If an account exists with this email, you will receive password reset instructions."
+    });
+  } catch (error) {
+    console.error('Request password reset error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset password
+router.post('/reset-password', [
+  body('token').isLength({ min: 1 }),
+  body('password').isLength({ min: 6 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+
+    const result = await pool.query(
+      'SELECT id, email, full_name, username, avatar_url FROM users WHERE password_reset_token = $1 AND password_reset_expires > NOW()',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const user = result.rows[0];
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    await pool.query(
+      'UPDATE users SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL WHERE id = $2',
+      [passwordHash, user.id]
+    );
+
+    const jwtToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.json({
+      message: 'Password reset successful',
+      token: jwtToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        email_verified: user.email_verified
+      }
+    });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;
