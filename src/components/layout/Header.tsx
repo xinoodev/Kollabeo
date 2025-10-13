@@ -7,9 +7,10 @@ import { LogOut, Plus, User, Settings } from 'lucide-react';
 
 interface HeaderProps {
   onCreateProject: () => void;
+  onNavigateToProfile?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onCreateProject }) => {
+export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToProfile }) => {
   const { user, signOut } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -74,6 +75,18 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject }) => {
                       </div>
                       <ThemeSelector showLabels={false} size="sm" />
                     </div>
+                    {onNavigateToProfile && (
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          onNavigateToProfile();
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Profile Settings
+                      </button>
+                    )}
                     <button
                       onClick={handleSignOut}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"

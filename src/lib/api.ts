@@ -209,6 +209,45 @@ class ApiClient {
     const data = await this.request(`/projects/${projectId}/role`);
     return data;
   }
+
+  // Profile methods
+  async getProfile() {
+    return this.request('/profile');
+  }
+
+  async updateName(fullName: string) {
+    return this.request('/profile/name', {
+      method: 'PUT',
+      body: JSON.stringify({ full_name: fullName }),
+    });
+  }
+
+  async updateUsername(username: string) {
+    return this.request('/profile/username', {
+      method: 'PUT',
+      body: JSON.stringify({ username }),
+    });
+  }
+
+  async updatePassword(currentPassword: string, newPassword: string) {
+    return this.request('/profile/password', {
+      method: 'PUT',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+  }
+
+  async updateAvatar(avatarUrl: string) {
+    return this.request('/profile/avatar', {
+      method: 'PUT',
+      body: JSON.stringify({ avatar_url: avatarUrl }),
+    });
+  }
+
+  async deleteAccount() {
+    return this.request('/profile', {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

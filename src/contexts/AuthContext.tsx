@@ -5,6 +5,7 @@ interface User {
   id: number;
   email: string;
   full_name: string;
+  username?: string;
   email_verified: boolean;
   avatar_url?: string;
 }
@@ -17,6 +18,7 @@ interface AuthContextType {
   verifyEmail: (token: string) => Promise<any>;
   resendVerification: (email: string) => Promise<any>;
   signOut: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,6 +104,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await apiClient.getCurrentUser();
+      setUser(response.user);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -110,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyEmail,
     resendVerification,
     signOut,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

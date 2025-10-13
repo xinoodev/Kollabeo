@@ -6,9 +6,10 @@ import { Project } from '../types';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
+  onNavigateToProfile: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onProjectSelect }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onProjectSelect, onNavigateToProfile }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -18,7 +19,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onProjectSelect }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <Header onCreateProject={() => setIsCreateModalOpen(true)} />
+      <Header
+        onCreateProject={() => setIsCreateModalOpen(true)}
+        onNavigateToProfile={onNavigateToProfile}
+      />
       
       <main className="mx-auto px-4 sm:px-6 lg:px-[5.2rem] py-8">
         <div className="mb-8">

@@ -5,20 +5,22 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthForm } from './components/auth/AuthForm';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectView } from './pages/ProjectView';
+import { Profile } from './pages/Profile';
 import { Project } from './types';
 import { Loader2 } from 'lucide-react';
+
+type View = 'dashboard' | 'project' | 'profile';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [currentView, setCurrentView] = useState<View>('dashboard');
 
-  // Handle email verification redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    
+
     if (token && window.location.pathname === '/verify-email') {
-      // The AuthForm will handle the verification
       return;
     }
   }, []);
@@ -31,21 +33,43 @@ function AppContent() {
     );
   }
 
-  // Show auth form if no user OR if user exists but email is not verified
   if (!user || !user.email_verified) {
     return <AuthForm />;
   }
 
-  if (selectedProject) {
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
+    setCurrentView('project');
+  };
+
+  const handleBackToDashboard = () => {
+    setSelectedProject(null);
+    setCurrentView('dashboard');
+  };
+
+  const handleNavigateToProfile = () => {
+    setCurrentView('profile');
+  };
+
+  if (currentView === 'profile') {
+    return <Profile onBack={handleBackToDashboard} />;
+  }
+
+  if (currentView === 'project' && selectedProject) {
     return (
       <ProjectView
         project={selectedProject}
-        onBack={() => setSelectedProject(null)}
+        onBack={handleBackToDashboard}
       />
     );
   }
 
-  return <Dashboard onProjectSelect={setSelectedProject} />;
+  return (
+    <Dashboard
+      onProjectSelect={handleProjectSelect}
+      onNavigateToProfile={handleNavigateToProfile}
+    />
+  );
 }
 
 function App() {
