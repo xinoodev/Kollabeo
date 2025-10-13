@@ -23,6 +23,7 @@ export const EmailVerificationPage: React.FC<EmailVerificationPageProps> = ({ to
         } else {
           setStatus('success');
           setMessage('Your email has been verified successfully! You will be redirected to your dashboard.');
+          window.history.replaceState({}, '', '/');
         }
       } catch (error: any) {
         setStatus('error');
@@ -39,7 +40,7 @@ export const EmailVerificationPage: React.FC<EmailVerificationPageProps> = ({ to
   }, [token, verifyEmail]);
 
   const handleGoToDashboard = () => {
-    window.location.href = '/';
+    window.location.reload();
   };
 
   return (
