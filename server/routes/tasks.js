@@ -19,11 +19,12 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT t.*, u.full_name as assignee_name 
-       FROM tasks t 
-       LEFT JOIN users u ON t.assignee_id = u.id 
-       WHERE t.project_id = $1 
-       ORDER BY t.position`,
+      `SELECT t.*, u.full_name as assignee_name,
+      (SELECT COUNT(*)::integer FROM task_comments WHERE task_id = t.id) as comment_count
+      FROM tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      WHERE t.project_id = $1
+      ORDER BY t.position`,
       [projectId]
     );
 

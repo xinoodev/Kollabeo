@@ -126,6 +126,7 @@ router.post('/verify-email', [
         id: user.id,
         email: user.email,
         full_name: user.full_name,
+        username: user.username,
         email_verified: true
       }
     });

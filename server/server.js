@@ -7,6 +7,7 @@ import columnRoutes from './routes/columns.js';
 import taskRoutes from './routes/tasks.js';
 import memberRoutes from './routes/members.js';
 import profileRoutes from './routes/profile.js';
+import commentRoutes from './routes/comments.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/columns', columnRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
