@@ -8,6 +8,7 @@ import { format } from "date-fns";
 
 interface TaskCommentsProps {
     taskId: number;
+    onCommentAdded?: () => void;
 }
 
 interface CommentItemProps {
@@ -113,7 +114,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     );
 };
 
-export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId }) => {
+export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, onCommentAdded }) => {
     const [comments, setComments] = useState<TaskComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
@@ -170,6 +171,10 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId }) => {
             await apiClient.createComment(taskId, newComment);
             setNewComment('');
             await loadComments();
+
+            if (onCommentAdded) {
+                onCommentAdded();
+            }
         } catch (error) {
             console.error('Error creating comment:', error);
         } finally {
@@ -226,6 +231,10 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId }) => {
         try {
             await apiClient.deleteComment(commentId);
             await loadComments();
+
+            if (onCommentAdded) {
+                onCommentAdded();
+            }
         } catch (error) {
             console.error('Error deleting comment:', error);
         }

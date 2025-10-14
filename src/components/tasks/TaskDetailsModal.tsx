@@ -98,6 +98,10 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     onClose(); // Close the TaskDetailsModal as well
   };
 
+  const handleCommentAdded = () => {
+    onUpdate();
+  };
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title={task.title} size="lg">
@@ -217,7 +221,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           </div>
 
           <div className="border-t pt-4">
-            <TaskComments taskId={task.id} />
+            <TaskComments taskId={task.id} onCommentAdded={handleCommentAdded} />
           </div>
 
           <div className="border-t pt-4">
