@@ -178,3 +178,17 @@ INSERT INTO users (email, password_hash, full_name, email_verified) VALUES
 
 INSERT INTO projects (name, description, color, owner_id) VALUES
 ('Sample Project', 'A sample project to get you started', '#3B82F6', 1);
+
+-- Add parent_id column to task_comments if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'task_comments' AND column_name = 'parent_id'
+  ) THEN
+    ALTER TABLE task_comments ADD COLUMN parent_id INTEGER REFERENCES task_comments(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Create index on parent_id for better query performance
+CREATE INDEX IF NOT EXISTS idx_task_comments_parent_id ON task_comments(parent_id);
