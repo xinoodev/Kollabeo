@@ -40,7 +40,7 @@ export interface Task {
   tags: string[];
   created_at: string;
   updated_at: string;
-  comments_count: number;
+  comments_count?: number;
 }
 
 export interface TaskComment {

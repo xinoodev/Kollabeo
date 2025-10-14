@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Task } from '../../types';
 import { Calendar, MessageSquare, User, Tag, AlertCircle } from 'lucide-react';
@@ -49,6 +50,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     transition: transition || 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const commentsCount = task.comments_count ?? 0;
 
   return (
     <div
@@ -110,10 +113,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               </div>
             )}
           </div>
-          <div className="flex items-center space-x-1">
-            <MessageSquare className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-            <span>{task.comments_count || 0}</span>
-          </div>
+          {commentsCount > 0 ? (
+            <div className="flex items-center space-x-1 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-md">
+              <MessageSquare className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              <span className="text-blue-600 dark:text-blue-400 font-medium">{commentsCount}</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1">
+              <MessageSquare className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+              <span className="text-gray-400 dark:text-gray-500">0</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -12,18 +12,21 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    // Verify user has access to the project (owner or member)
     const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
     const result = await pool.query(
-      `SELECT t.*, u.full_name as assignee_name,
-      (SELECT COUNT(*)::integer FROM task_comments WHERE task_id = t.id) as comment_count
+      `SELECT 
+        t.*,
+        u.full_name as assignee_name,
+        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN task_comments tc ON t.id = tc.task_id
       WHERE t.project_id = $1
+      GROUP BY t.id, u.full_name
       ORDER BY t.position`,
       [projectId]
     );
@@ -48,19 +51,41 @@ router.post('/', authenticateToken, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, column_id, project_id, priority, due_date, tags } = req.body;
+    const { title, description, column_id, project_id, priority, due_date, assignee_id, tags } = req.body;
 
-    const { hasAccess } = await checkProjectAccess(req.user.id, project_id);
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id, 'member');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    const positionResult = await pool.query(
+      'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM tasks WHERE column_id = $1',
+      [column_id]
+    );
+    const position = positionResult.rows[0].next_position;
+
     const result = await pool.query(
-      'INSERT INTO tasks (title, description, column_id, project_id, priority, due_date, tags) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [title, description || null, column_id, project_id, priority || 'medium', due_date || null, tags || []]
+      `INSERT INTO tasks (title, description, column_id, project_id, position, priority, due_date, assignee_id, tags)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING *`,
+      [title, description || null, column_id, project_id, position, priority, due_date || null, assignee_id || null, tags || []]
     );
 
-    res.status(201).json(result.rows[0]);
+    // Get the task with comments count
+    const taskWithCount = await pool.query(
+      `SELECT 
+        t.*,
+        u.full_name as assignee_name,
+        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
+      FROM tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN task_comments tc ON t.id = tc.task_id
+      WHERE t.id = $1
+      GROUP BY t.id, u.full_name`,
+      [result.rows[0].id]
+    );
+
+    res.status(201).json(taskWithCount.rows[0]);
   } catch (error) {
     console.error('Create task error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -68,39 +93,54 @@ router.post('/', authenticateToken, [
 });
 
 // Update task
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, [
+  body('title').optional().trim().isLength({ min: 1 }),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent'])
+], async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { id } = req.params;
-    const { title, description, column_id, priority, due_date, tags, position, assignee_id } = req.body;
+    const { title, description, priority, due_date, assignee_id, tags } = req.body;
 
-    const taskCheck = await pool.query(
-      'SELECT project_id FROM tasks WHERE id = $1',
-      [id]
-    );
-
-    if (taskCheck.rows.length === 0) {
+    const taskResult = await pool.query('SELECT project_id FROM tasks WHERE id = $1', [id]);
+    if (taskResult.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    const projectId = taskCheck.rows[0].project_id;
-    
-    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    const { hasAccess } = await checkProjectAccess(req.user.id, taskResult.rows[0].project_id, 'member');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    await pool.query(
+      `UPDATE tasks 
+       SET title = COALESCE($1, title),
+           description = COALESCE($2, description),
+           priority = COALESCE($3, priority),
+           due_date = COALESCE($4, due_date),
+           assignee_id = COALESCE($5, assignee_id),
+           tags = COALESCE($6, tags),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7`,
+      [title, description, priority, due_date, assignee_id, tags, id]
+    );
+
+    // Get the updated task with comments count
     const result = await pool.query(
-      `UPDATE tasks SET 
-       title = COALESCE($1, title),
-       description = COALESCE($2, description),
-       column_id = COALESCE($3, column_id),
-       priority = COALESCE($4, priority),
-       due_date = COALESCE($5, due_date),
-       tags = COALESCE($6, tags),
-       position = COALESCE($7, position),
-       assignee_id = CASE WHEN $8::integer IS NULL THEN NULL ELSE $8 END
-       WHERE id = $9 RETURNING *`,
-      [title, description, column_id, priority, due_date, tags, position, assignee_id, id]
+      `SELECT 
+        t.*,
+        u.full_name as assignee_name,
+        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
+      FROM tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN task_comments tc ON t.id = tc.task_id
+      WHERE t.id = $1
+      GROUP BY t.id, u.full_name`,
+      [id]
     );
 
     res.json(result.rows[0]);
@@ -112,30 +152,39 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
 // Delete task
 router.delete('/:id', authenticateToken, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
 
-    const taskCheck = await pool.query(
-      'SELECT project_id FROM tasks WHERE id = $1',
-      [id]
-    );
-
-    if (taskCheck.rows.length === 0) {
+    const taskResult = await client.query('SELECT project_id, column_id, position FROM tasks WHERE id = $1', [id]);
+    if (taskResult.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    const projectId = taskCheck.rows[0].project_id;
-    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
+    const task = taskResult.rows[0];
+    const { hasAccess } = await checkProjectAccess(req.user.id, task.project_id, 'member');
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Only admins and owners can delete tasks' });
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
+    await client.query('BEGIN');
+
+    await client.query('DELETE FROM task_comments WHERE task_id = $1', [id]);
+    await client.query('DELETE FROM tasks WHERE id = $1', [id]);
+    await client.query(
+      'UPDATE tasks SET position = position - 1 WHERE column_id = $1 AND position > $2',
+      [task.column_id, task.position]
+    );
+
+    await client.query('COMMIT');
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Delete task error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 
