@@ -43,7 +43,7 @@ router.get('/:taskId', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { taskId, content } = req.body;
+        const { taskId, content, parentId } = req.body;
 
         if (!content || content.trim() === '') {
             return res.status(400).json({ error: 'Content is required' });
@@ -65,11 +65,22 @@ router.post('/', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
 
+        if (parentId) {
+            const parentResult = await pool.query(
+                'SELECT id FROM task_comments WHERE id = $1 AND task_id = $2',
+                [parentId, taskId]
+            );
+
+            if (parentResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Parent comment not found' });
+            }
+        }
+
         const result = await pool.query(
-            `INSERT INTO task_comments (task_id, user_id, content)
-            VALUES ($1, $2, $3)
+            `INSERT INTO task_comments (task_id, user_id, content, parent_id)
+            VALUES ($1, $2, $3, $4)
             RETURNING *`,
-            [taskId, req.user.id, content]
+            [taskId, req.user.id, content, parentId || null]
         );
 
         const userResult = await pool.query(
