@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { EditTaskModal } from './EditTaskModal';
+import { TaskComments } from './TaskComments';
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -213,6 +214,10 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="border-t pt-4">
+            <TaskComments taskId={task.id} />
           </div>
 
           <div className="border-t pt-4">

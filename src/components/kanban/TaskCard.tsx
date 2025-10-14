@@ -112,7 +112,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           </div>
           <div className="flex items-center space-x-1">
             <MessageSquare className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-            <span>0</span>
+            <span>{task.comments_count || 0}</span>
           </div>
         </div>
       </div>

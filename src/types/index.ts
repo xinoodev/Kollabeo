@@ -40,6 +40,7 @@ export interface Task {
   tags: string[];
   created_at: string;
   updated_at: string;
+  comments_count: number;
 }
 
 export interface TaskComment {
@@ -48,7 +49,10 @@ export interface TaskComment {
   user_id: number;
   content: string;
   created_at: string;
-  user?: User;
+  full_name?: string;
+  username?: string;
+  avatar_url?: string;
+  email?: string;
 }
 
 export interface ProjectMember {

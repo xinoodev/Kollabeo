@@ -283,6 +283,31 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Comment methods
+  async getComments(taskId: number) {
+    return this.request(`/comments/${taskId}`);
+  }
+
+  async createComment(taskId: number, content: string) {
+    return this.request(`/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ taskId, content }),
+    });
+  }
+
+  async updateComment(commentId: number, content: string) {
+    return this.request(`/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async deleteComment(commentId: number) {
+    return this.request(`/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
