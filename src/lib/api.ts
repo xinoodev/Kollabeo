@@ -289,10 +289,10 @@ class ApiClient {
     return this.request(`/comments/${taskId}`);
   }
 
-  async createComment(taskId: number, content: string) {
+  async createComment(taskId: number, content: string, parentId?: number) {
     return this.request(`/comments`, {
       method: 'POST',
-      body: JSON.stringify({ taskId, content }),
+      body: JSON.stringify({ taskId, content, parentId }),
     });
   }
 

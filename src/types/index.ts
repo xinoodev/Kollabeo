@@ -48,11 +48,13 @@ export interface TaskComment {
   task_id: number;
   user_id: number;
   content: string;
+  parent_id?: number | null;
   created_at: string;
   full_name?: string;
   username?: string;
   avatar_url?: string;
   email?: string;
+  replies?: TaskComment[];
 }
 
 export interface ProjectMember {
