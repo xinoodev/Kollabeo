@@ -66,6 +66,19 @@ export interface ProjectMember {
   email?: string;
   full_name?: string;
   avatar_url?: string;
+  username?: string;
+}
+
+export interface TaskCollaborator {
+  id: number;
+  task_id: number;
+  user_id: number;
+  added_by?: number;
+  added_at: string;
+  full_name?: string;
+  email?: string;
+  avatar_url?: string;
+  username?: string;
 }
 
 export type DragEndEvent = {

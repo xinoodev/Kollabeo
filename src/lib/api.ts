@@ -308,6 +308,24 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Collaborator methods
+  async getCollaborators(taskId: number) {
+    return this.request(`/collaborators/${taskId}`);
+  }
+
+  async addCollaborator(taskId: number, userId: number) {
+    return this.request(`/collaborators`, {
+      method: 'POST',
+      body: JSON.stringify({ taskId, userId }),
+    });
+  }
+
+  async removeCollaborator(collaboratorId: number) {
+    return this.request(`/collaborators/${collaboratorId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
