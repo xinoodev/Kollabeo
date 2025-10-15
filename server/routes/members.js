@@ -51,6 +51,7 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
           u.email,
           u.full_name,
           u.avatar_url,
+          u.username,
           CASE pm.role
             WHEN 'admin' THEN 2
             WHEN 'member' THEN 3
@@ -68,6 +69,7 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
           u.email,
           u.full_name,
           u.avatar_url,
+          u.username,
           1 as role_order
         FROM projects p
         JOIN users u ON p.owner_id = u.id
@@ -143,7 +145,8 @@ router.post('/', authenticateToken, [
         pm.*,
         u.email,
         u.full_name,
-        u.avatar_url
+        u.avatar_url,
+        u.username
        FROM project_members pm
        JOIN users u ON pm.user_id = u.id
        WHERE pm.id = $1`,
@@ -198,7 +201,8 @@ router.put('/:id', authenticateToken, [
         pm.*,
         u.email,
         u.full_name,
-        u.avatar_url
+        u.avatar_url,
+        u.username
        FROM project_members pm
        JOIN users u ON pm.user_id = u.id
        WHERE pm.id = $1`,

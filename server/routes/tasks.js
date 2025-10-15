@@ -18,15 +18,15 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT 
+      `SELECT
         t.*,
-        u.full_name as assignee_name,
+        COALESCE(u.username, u.full_name) as assignee_name,
         COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
       LEFT JOIN task_comments tc ON t.id = tc.task_id
       WHERE t.project_id = $1
-      GROUP BY t.id, u.full_name
+      GROUP BY t.id, u.username, u.full_name
       ORDER BY t.position`,
       [projectId]
     );
@@ -73,15 +73,15 @@ router.post('/', authenticateToken, [
 
     // Get the task with comments count
     const taskWithCount = await pool.query(
-      `SELECT 
+      `SELECT
         t.*,
-        u.full_name as assignee_name,
+        COALESCE(u.username, u.full_name) as assignee_name,
         COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
       LEFT JOIN task_comments tc ON t.id = tc.task_id
       WHERE t.id = $1
-      GROUP BY t.id, u.full_name`,
+      GROUP BY t.id, u.username, u.full_name`,
       [result.rows[0].id]
     );
 
@@ -116,30 +116,58 @@ router.put('/:id', authenticateToken, [
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (title !== undefined) {
+      updates.push(`title = $${paramCount++}`);
+      values.push(title);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount++}`);
+      values.push(description);
+    }
+    if (priority !== undefined) {
+      updates.push(`priority = $${paramCount++}`);
+      values.push(priority);
+    }
+    if (due_date !== undefined) {
+      updates.push(`due_date = $${paramCount++}`);
+      values.push(due_date);
+    }
+    if (assignee_id !== undefined) {
+      updates.push(`assignee_id = $${paramCount++}`);
+      values.push(assignee_id);
+    }
+    if (tags !== undefined) {
+      updates.push(`tags = $${paramCount++}`);
+      values.push(tags);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id);
+
     await pool.query(
-      `UPDATE tasks 
-       SET title = COALESCE($1, title),
-           description = COALESCE($2, description),
-           priority = COALESCE($3, priority),
-           due_date = COALESCE($4, due_date),
-           assignee_id = COALESCE($5, assignee_id),
-           tags = COALESCE($6, tags),
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7`,
-      [title, description, priority, due_date, assignee_id, tags, id]
+      `UPDATE tasks SET ${updates.join(', ')} WHERE id = $${paramCount}`,
+      values
     );
 
     // Get the updated task with comments count
     const result = await pool.query(
-      `SELECT 
+      `SELECT
         t.*,
-        u.full_name as assignee_name,
+        COALESCE(u.username, u.full_name) as assignee_name,
         COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
       LEFT JOIN task_comments tc ON t.id = tc.task_id
       WHERE t.id = $1
-      GROUP BY t.id, u.full_name`,
+      GROUP BY t.id, u.username, u.full_name`,
       [id]
     );
 
