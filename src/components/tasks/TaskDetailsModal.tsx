@@ -209,12 +209,27 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   Assigned to
                 </h4>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {task.assignee_name || 'Unknown User'}
-                  </span>
+                  {user?.avatar_url ? (
+                    <>
+                      <img
+                        src={user.avatar_url}
+                        alt={user?.username || user?.full_name}
+                        className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {task.assignee_name || 'Unknown User'}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {task.assignee_name || 'Unknown User'}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             )}
