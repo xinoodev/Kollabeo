@@ -118,7 +118,7 @@ router.delete('/:collaboratorId', authenticateToken, async (req, res) => {
 
     const { assignee_id } = collabResult.rows[0];
 
-    if (assignee_id !== req.user.userId) {
+    if (assignee_id !== req.user.id) {
       return res.status(403).json({ error: 'Only the assignee can remove collaborators' });
     }
 
