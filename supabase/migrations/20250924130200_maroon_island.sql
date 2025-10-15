@@ -192,3 +192,17 @@ END $$;
 
 -- Create index on parent_id for better query performance
 CREATE INDEX IF NOT EXISTS idx_task_comments_parent_id ON task_comments(parent_id);
+
+-- Create task_collaborators table
+CREATE TABLE IF NOT EXISTS task_collaborators (
+  id SERIAL PRIMARY KEY,
+  task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(task_id, user_id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_task_collaborators_task_id ON task_collaborators(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_collaborators_user_id ON task_collaborators(user_id);
