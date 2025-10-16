@@ -23,6 +23,8 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   const [role, setRole] = useState<'admin' | 'member'>('member');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [emailPreview, setEmailPreview] = useState('');
   const { user } = useAuth();
 
   const currentUserMember = members.find(m => m.user_id === user?.id);
@@ -47,17 +49,21 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setEmailPreview('');
     setLoading(true);
 
     try {
       const result = await apiClient.sendInvitation(project.id, email, role);
+      const invitedEmail = email;
       setEmail('');
       setRole('member');
 
       if (result.emailPreview) {
-        alert(`Invitation sent! (Test mode)\n\nPreview the email at:\n${result.emailPreview}`);
+        setSuccess(`Invitation sent to ${invitedEmail}! (Test mode)`);
+        setEmailPreview(result.emailPreview);
       } else {
-        alert('Invitation sent successfully! The user will receive an email to join the project.');
+        setSuccess(`Invitation sent successfully to ${invitedEmail}! The user will receive an email to join the project.`);
       }
     } catch (error: any) {
       setError(error.message || 'Error sending invitation');
@@ -123,6 +129,22 @@ export const MembersModal: React.FC<MembersModalProps> = ({
             {error && (
               <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <p className="font-medium">{success}</p>
+                {emailPreview && (
+                  <a
+                    href={emailPreview}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-xs underline hover:no-underline"
+                  >
+                    Preview email
+                  </a>
+                )}
               </div>
             )}
 
