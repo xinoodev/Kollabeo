@@ -206,3 +206,23 @@ CREATE TABLE IF NOT EXISTS task_collaborators (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_task_collaborators_task_id ON task_collaborators(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_collaborators_user_id ON task_collaborators(user_id);
+
+CREATE TABLE IF NOT EXISTS project_invitations (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  token VARCHAR(255) UNIQUE NOT NULL,
+  invited_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  accepted_at TIMESTAMP,
+  UNIQUE(project_id, email, status)
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_project_invitations_token ON project_invitations(token);
+CREATE INDEX IF NOT EXISTS idx_project_invitations_email ON project_invitations(email);
+CREATE INDEX IF NOT EXISTS idx_project_invitations_project_id ON project_invitations(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_invitations_status ON project_invitations(status);
