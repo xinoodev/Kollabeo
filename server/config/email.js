@@ -210,6 +210,61 @@ export const emailTemplate = {
                 </div>
             </div>
         `
+    }),
+    projectInvitation: (invitationUrl, projectName, inviterName, role) => ({
+        subject: `You've been invited to join "${projectName}" on Kollabeo`,
+        html: `
+            <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
+                </div>
+
+                <div style="padding: 40px 20px; background: #ffffff;">
+                    <h2 style="color: #1F2937; margin: 0 0 20px 0;">Project Invitation</h2>
+
+                    <p style="color: #4B5563; line-height: 1.6; margin: 0 0 20px 0;">
+                        <strong>${inviterName}</strong> has invited you to join the project <strong>"${projectName}"</strong>
+                        as a <strong>${role}</strong>.
+                    </p>
+
+                    <div style="background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 16px; margin: 20px 0;">
+                        <p style="color: #1E40AF; margin: 0; font-weight: 600;">
+                            Project: ${projectName}
+                        </p>
+                        <p style="color: #3B82F6; margin: 8px 0 0 0; font-size: 14px;">
+                            Role: ${role.charAt(0).toUpperCase() + role.slice(1)}
+                        </p>
+                    </div>
+
+                    <p style="color: #4B5563; line-height: 1.6; margin: 0 0 20px 0;">
+                        Click the button below to accept the invitation and join the project:
+                    </p>
+
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${invitationUrl}" style="background: #3B82F6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+                            Accept Invitation
+                        </a>
+                    </div>
+
+                    <p style="color: #6B7280; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0;">
+                        If the button doesn't work, please copy and paste the following link into your browser:<br>
+                        <a href="${invitationUrl}" style="color: #3B82F6; word-break: break-all;">${invitationUrl}</a>
+                    </p>
+
+                    <p style="color: #6B7280; font-size: 14px; margin: 30px 0 0 0;">
+                        This invitation will expire in 7 days. If you didn't expect this invitation,
+                        you can safely ignore this email.
+                    </p>
+                </div>
+
+                <div style="background: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
+                    <p style="color: #6B7280; font-size: 14px; margin: 0;">
+                        © ${new Date().getFullYear()} Kollabeo. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        `
     })
 };
 
@@ -404,6 +459,64 @@ export const sendPasswordResetEmail = async (email, token, userName) => {
 
     } catch (error) {
         console.error('❌ Error sending password reset email:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+// Send project invitation email
+export const sendProjectInvitationEmail = async (email, token, projectName, inviterName, role) => {
+    try {
+        console.log('🔄 Attempting to send project invitation email to:', email);
+
+        const emailTransporter = await getTransporter();
+        const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/accept-invitation?token=${token}`;
+
+        console.log('🔗 Invitation URL:', invitationUrl);
+
+        const mailOptions = {
+            from: process.env.FROM_EMAIL || 'noreply@kollabeo.com',
+            to: email,
+            ...emailTemplate.projectInvitation(invitationUrl, projectName, inviterName, role)
+        };
+
+        console.log('📬 Sending project invitation email:', {
+            from: mailOptions.from,
+            to: mailOptions.to,
+            subject: mailOptions.subject
+        });
+
+        const info = await emailTransporter.sendMail(mailOptions);
+
+        console.log('✅ Project invitation email sent:', {
+            messageId: info.messageId,
+            accepted: info.accepted
+        });
+
+        const isTestMode = info.envelope && info.envelope.from && info.envelope.from.includes('ethereal.email');
+
+        if (isTestMode) {
+            const previewUrl = nodemailer.getTestMessageUrl(info);
+            console.log('🧪 TEST MODE: Project invitation email sent to test service');
+            console.log('👀 Preview URL: %s', previewUrl);
+
+            return {
+                success: true,
+                messageId: info.messageId,
+                previewUrl,
+                isTestMode: true
+            };
+        } else {
+            console.log('✅ Real project invitation email sent to:', email);
+
+            return {
+                success: true,
+                messageId: info.messageId,
+                isTestMode: false
+            };
+        }
+
+    } catch (error) {
+        console.error('❌ Error sending project invitation email:', error);
         return { success: false, error: error.message };
     }
 };
