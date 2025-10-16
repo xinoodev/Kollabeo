@@ -50,12 +50,17 @@ export const MembersModal: React.FC<MembersModalProps> = ({
     setLoading(true);
 
     try {
-      await apiClient.addMember(project.id, email, role);
+      const result = await apiClient.sendInvitation(project.id, email, role);
       setEmail('');
       setRole('member');
-      await fetchMembers();
+
+      if (result.emailPreview) {
+        alert(`Invitation sent! (Test mode)\n\nPreview the email at:\n${result.emailPreview}`);
+      } else {
+        alert('Invitation sent successfully! The user will receive an email to join the project.');
+      }
     } catch (error: any) {
-      setError(error.message || 'Error adding member');
+      setError(error.message || 'Error sending invitation');
     } finally {
       setLoading(false);
     }
@@ -112,7 +117,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
           <form onSubmit={handleAddMember} className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <UserPlus className="h-4 w-4" />
-              <span>Add New Member</span>
+              <span>Invite New Member</span>
             </div>
 
             {error && (
@@ -120,6 +125,10 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                 {error}
               </div>
             )}
+
+            <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              An invitation email will be sent to the user. They must accept the invitation to join the project.
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
@@ -142,7 +151,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
             </div>
 
             <Button type="submit" disabled={loading} fullWidth>
-              {loading ? 'Adding...' : 'Add Member'}
+              {loading ? 'Sending Invitation...' : 'Send Invitation'}
             </Button>
           </form>
         )}

@@ -326,6 +326,31 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Invitation methods
+  async getInvitations(projectId: number) {
+    return this.request(`/invitations/project/${projectId}`);
+  }
+
+  async sendInvitation(projectId: number, email: string, role: 'admin' |'member') {
+    return this.request(`/invitations`, {
+      method: 'POST',
+      body: JSON.stringify({ project_id: projectId, email, role }),
+    });
+  }
+
+  async acceptInvitation(token: string) {
+    return this.request(`/invitations/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async cancelInvitation(invitationId: number) {
+    return this.request(`/invitations/${invitationId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
