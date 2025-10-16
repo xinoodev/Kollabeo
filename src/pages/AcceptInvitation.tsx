@@ -9,15 +9,16 @@ interface AcceptInvitationProps {
     onGoToDashboard: () => void;
 }
 
-export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({ 
-    onGoToProject, 
-    onGoToDashboard 
+export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
+    onGoToProject,
+    onGoToDashboard
 }) => {
     const { user } = useAuth();
     const [status, setStatus] = useState<"loading" | "success" | "error" | "needs-auth">("loading");
     const [message, setMessage] = useState("");
     const [projectId, setProjectId] = useState<number | null>(null);
     const [projectName, setProjectName] = useState("");
+    const [invitationToken, setInvitationToken] = useState<string | null>(null);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -28,6 +29,8 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
             setMessage("Invalid invitation link");
             return;
         }
+
+        setInvitationToken(token);
 
         if (!user) {
             setStatus("needs-auth");
@@ -124,6 +127,9 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-6">
                                 {message}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                You can still access the project if you're already a member. Otherwise, please contact the project owner.
                             </p>
                             <Button onClick={onGoToDashboard} className="w-full">
                                 Go to Dashboard
