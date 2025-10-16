@@ -82,7 +82,7 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO task_collaborators (task_id, user_id, added_by)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [taskId, userId, req.user.userId]
+      [taskId, userId, req.user.id]
     );
 
     const userResult = await pool.query(
