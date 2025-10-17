@@ -33,6 +33,9 @@ export const MembersModal: React.FC<MembersModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      setError('');
+      setSuccess('');
+      setEmailPreview('');
       fetchMembers();
     }
   }, [isOpen, project.id]);
