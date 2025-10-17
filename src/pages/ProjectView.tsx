@@ -15,10 +15,11 @@ import { apiClient } from '../lib/api';
 
 interface ProjectViewProps {
   project: Project;
+  onNavigateToProfile: () => void;
   onBack: () => void;
 }
 
-export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProject, onBack }) => {
+export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProject, onNavigateToProfile, onBack }) => {
   const [project, setProject] = useState<Project>(initialProject);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isTaskDetailsModalOpen, setIsTaskDetailsModalOpen] = useState(false);
@@ -110,7 +111,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-        <Header onCreateProject={() => setIsCreateProjectModalOpen(true)} />
+        <Header onCreateProject={() => setIsCreateProjectModalOpen(true)} onNavigateToProfile={onNavigateToProfile} />
         
         <main className="w-full px-4 sm:px-6 lg:px-8 pt-8">
           <div className="mb-6">

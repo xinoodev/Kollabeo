@@ -103,6 +103,7 @@ function AppContent() {
       <ProjectView
         project={selectedProject}
         onBack={handleBackToDashboard}
+        onNavigateToProfile={handleNavigateToProfile}
       />
     );
   }
