@@ -3,9 +3,10 @@ import { apiClient } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { Loader, CheckCircle, XCircle, Mail } from "lucide-react";
+import { Project } from "../types";
 
 interface AcceptInvitationProps {
-    onGoToProject: (projectId: number) => void;
+    onGoToProject: (project: Project) => void;
     onGoToDashboard: () => void;
 }
 
@@ -54,9 +55,23 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
         acceptInvitation();
     }, [user]);
 
-    const handleGoToProject = () => {
+    const handleGoToProject = async () => {
         if (projectId) {
-            onGoToProject(projectId);
+            try {
+                setStatus("loading");
+                setMessage("Loading project...");
+                const project = await apiClient.getProject(projectId);
+                setTimeout(() => {
+                    onGoToProject(project);
+                }, 1600);
+            } catch (error) {
+                console.error('Error loading project:', error);
+                setStatus("error");
+                setMessage("Failed to load project. Redirecting to dashboard...");
+                setTimeout(() => {
+                    onGoToDashboard();
+                }, 2000);
+            }
         }
     };
 
@@ -108,7 +123,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                             )}
                             <div className="space-y-3">
                                 <Button onClick={handleGoToProject} className="w-full">
-                                    Go to Project
+                                    Go to "{projectName}"
                                 </Button>
                                 <Button onClick={onGoToDashboard} variant="outline" className="w-full">
                                     Go to Dashboard

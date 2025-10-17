@@ -54,11 +54,10 @@ function AppContent() {
   if (window.location.pathname === '/accept-invitation') {
     return (
       <AcceptInvitation
-        onGoToProject={(projectId) => {
-          // You'll need to fetch the project details here
-          // For now, just navigate to dashboard
+        onGoToProject={(project: Project) => {
+          setSelectedProject(project);
+          setCurrentView('project');
           window.history.replaceState({}, '', '/');
-          setCurrentView('dashboard');
         }}
         onGoToDashboard={() => {
           window.history.replaceState({}, '', '/');
