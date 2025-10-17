@@ -240,7 +240,21 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only admins and owners can remove other members' });
     }
 
+    const userEmailResult = await pool.query(
+      'SELECT email FROM users WHERE id = $1',
+      [user_id]
+    );
+
+    const userEmail = userEmailResult.rows[0].email;
+
     await pool.query('DELETE FROM project_members WHERE id = $1', [id]);
+
+    await pool.query(
+      `DELETE FROM project_invitations
+      WHERE project_id = $1
+      AND email = $2`,
+      [project_id, userEmail]
+    );
 
     res.json({ message: 'Member removed successfully' });
   } catch (error) {
