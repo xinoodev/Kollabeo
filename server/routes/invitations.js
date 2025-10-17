@@ -162,25 +162,49 @@ router.post('/accept', [
 
     const invitationResult = await client.query(
       `SELECT * FROM project_invitations
-       WHERE token = $1 AND status = 'pending'
+       WHERE token = $1
        FOR UPDATE`,
       [token]
     );
 
     if (invitationResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Invitation not found or already used' });
+      return res.status(404).json({ 
+        error: 'Invitation not found',
+        shouldRedirect: true 
+      });
     }
 
     const invitation = invitationResult.rows[0];
 
-    if (new Date() > new Date(invitation.expires_at)) {
-      await client.query(
-        'UPDATE project_invitations SET status = $1 WHERE id = $2',
-        ['expired', invitation.id]
-      );
+    if (invitation.status === 'accepted') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'This invitation has already been accepted',
+        shouldRedirect: true 
+      });
+    }
+
+    if (invitation.status === 'expired' || new Date() > new Date(invitation.expires_at)) {
+      if (invitation.status !== 'expired') {
+        await client.query(
+          'UPDATE project_invitations SET status = $1 WHERE id = $2',
+          ['expired', invitation.id]
+        );
+      }
       await client.query('COMMIT');
-      return res.status(400).json({ error: 'Invitation has expired' });
+      return res.status(400).json({ 
+        error: 'Invitation has expired',
+        shouldRedirect: true 
+      });
+    }
+
+    if (invitation.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Invitation is no longer valid',
+        shouldRedirect: true 
+      });
     }
 
     const userResult = await client.query(
@@ -192,7 +216,8 @@ router.post('/accept', [
       await client.query('ROLLBACK');
       return res.status(400).json({
         error: 'No account found with this email. Please register first.',
-        needsRegistration: true
+        needsRegistration: true,
+        shouldRedirect: true
       });
     }
 
@@ -209,7 +234,18 @@ router.post('/accept', [
         ['accepted', invitation.id]
       );
       await client.query('COMMIT');
-      return res.status(400).json({ error: 'You are already a member of this project' });
+      
+      const projectResult = await client.query(
+        'SELECT name FROM projects WHERE id = $1',
+        [invitation.project_id]
+      );
+      
+      return res.status(200).json({ 
+        message: 'You are already a member of this project',
+        projectId: invitation.project_id,
+        projectName: projectResult.rows[0].name,
+        alreadyMember: true
+      });
     }
 
     await client.query(
@@ -233,7 +269,8 @@ router.post('/accept', [
     res.json({
       message: 'Invitation accepted successfully',
       projectId: invitation.project_id,
-      projectName: projectResult.rows[0].name
+      projectName: projectResult.rows[0].name,
+      success: true
     });
 
   } catch (error) {
@@ -242,11 +279,15 @@ router.post('/accept', [
     
     if (error.code === '23505') {
       return res.status(400).json({ 
-        error: 'This invitation has already been processed. Please refresh and try again.' 
+        error: 'This invitation has already been processed. Please refresh and try again.',
+        shouldRedirect: true
       });
     }
     
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      shouldRedirect: true 
+    });
   } finally {
     client.release();
   }

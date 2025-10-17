@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { apiClient } from "../lib/api";
+
 import { useAuth } from "../contexts/AuthContext";
-import { Button } from "../components/ui/Button";
 import { Loader, CheckCircle, XCircle, Mail } from "lucide-react";
-import { Project } from "../types";
+import { Button } from "../components/ui/Button";
+import { apiClient } from "../lib/api";
+import React, { useEffect, useState } from "react";
 
 interface AcceptInvitationProps {
-    onGoToProject: (project: Project) => void;
+    onGoToProject: (projectId: number) => void;
     onGoToDashboard: () => void;
 }
 
@@ -15,7 +15,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
     onGoToDashboard
 }) => {
     const { user } = useAuth();
-    const [status, setStatus] = useState<"loading" | "success" | "error" | "needs-auth">("loading");
+    const [status, setStatus] = useState<"loading" | "success" | "error" | "needs-auth" | "already-member">("loading");
     const [message, setMessage] = useState("");
     const [projectId, setProjectId] = useState<number | null>(null);
     const [projectName, setProjectName] = useState("");
@@ -42,36 +42,35 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
         const acceptInvitation = async () => {
             try {
                 const result = await apiClient.acceptInvitation(token);
-                setStatus("success");
-                setMessage(result.message);
-                setProjectId(result.projectId);
-                setProjectName(result.projectName);
+                
+                if (result.alreadyMember) {
+                    setStatus("already-member");
+                    setMessage(result.message);
+                    setProjectId(result.projectId);
+                    setProjectName(result.projectName);
+                } else {
+                    setStatus("success");
+                    setMessage(result.message);
+                    setProjectId(result.projectId);
+                    setProjectName(result.projectName);
+                }
             } catch (error: any) {
-                setStatus("error");
-                setMessage(error.message || "Failed to accept invitation");
+                if (error.shouldRedirect) {
+                    setStatus("error");
+                    setMessage(error.message || "Failed to accept invitation");
+                } else {
+                    setStatus("error");
+                    setMessage(error.message || "Failed to accept invitation");
+                }
             }
         };
 
         acceptInvitation();
     }, [user]);
 
-    const handleGoToProject = async () => {
+    const handleGoToProject = () => {
         if (projectId) {
-            try {
-                setStatus("loading");
-                setMessage("Loading project...");
-                const project = await apiClient.getProject(projectId);
-                setTimeout(() => {
-                    onGoToProject(project);
-                }, 1600);
-            } catch (error) {
-                console.error('Error loading project:', error);
-                setStatus("error");
-                setMessage("Failed to load project. Redirecting to dashboard...");
-                setTimeout(() => {
-                    onGoToDashboard();
-                }, 2000);
-            }
+            onGoToProject(projectId);
         }
     };
 
@@ -123,7 +122,34 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                             )}
                             <div className="space-y-3">
                                 <Button onClick={handleGoToProject} className="w-full">
-                                    Go to "{projectName}"
+                                    Go to Project
+                                </Button>
+                                <Button onClick={onGoToDashboard} variant="outline" className="w-full">
+                                    Go to Dashboard
+                                </Button>
+                            </div>
+                        </>
+                    )}
+
+                    {status === "already-member" && (
+                        <>
+                            <div className="flex justify-center mb-4">
+                                <CheckCircle className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                Already a Member
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-2">
+                                {message}
+                            </p>
+                            {projectName && (
+                                <p className="text-gray-900 dark:text-white font-semibold mb-6">
+                                    Project: "{projectName}"
+                                </p>
+                            )}
+                            <div className="space-y-3">
+                                <Button onClick={handleGoToProject} className="w-full">
+                                    Go to Project
                                 </Button>
                                 <Button onClick={onGoToDashboard} variant="outline" className="w-full">
                                     Go to Dashboard
@@ -138,7 +164,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                                 <XCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                Invitation Failed
+                                Invitation Error
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-6">
                                 {message}
