@@ -10,7 +10,7 @@ async function runMigrations() {
   try {
     console.log('🚀 Starting database migrations...');
     
-    const migrationPath = path.join(__dirname, '../../supabase/migrations/20250924130200_maroon_island.sql');
+    const migrationPath = path.join(__dirname, '../../supabase/migrations/build_database.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
     
     await pool.query(migrationSQL);
