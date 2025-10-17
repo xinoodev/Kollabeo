@@ -67,6 +67,10 @@ router.post('/', authenticateToken, [
       [email]
     );
 
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     if (userResult.rows.length > 0) {
       const userId = userResult.rows[0].id;
 
