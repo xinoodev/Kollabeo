@@ -41,7 +41,7 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
         }
 
         const result = await pool.query(
-            `SELECT * project_invitation_links
+            `SELECT * FROM project_invitation_links
             WHERE project_id = $1 AND is_active = TRUE AND expires_at > NOW()
             ORDER BY created_at DESC
             LIMIT 1`,
