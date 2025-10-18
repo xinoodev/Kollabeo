@@ -79,6 +79,21 @@ export const MembersModal: React.FC<MembersModalProps> = ({
     }
   };
 
+  const handleGenerateNewLink = async () => {
+    setLinkLoading(true);
+    setError('');
+    try {
+      await apiClient.deactivateInvitationLink(project.id);
+      const data = await apiClient.createInvitationLink(project.id);
+      setInvitationLink(data.link);
+      setSuccess(data.message);
+    } catch (error: any) {
+      setError(error.message || 'Error generating new invitation link');
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
   const handleCopyLink = () => {
     if (invitationLink) {
       const fullLink = `${window.location.origin}/accept-invitation?link=${invitationLink.token}`;
@@ -306,7 +321,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     <div className="flex gap-2">
                       <Button
                         type="button"
-                        onClick={handleCreateLink}
+                        onClick={handleGenerateNewLink}
                         disabled={linkLoading}
                         variant="outline"
                         className="flex-1"
