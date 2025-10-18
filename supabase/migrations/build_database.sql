@@ -226,3 +226,19 @@ CREATE INDEX IF NOT EXISTS idx_project_invitations_token ON project_invitations(
 CREATE INDEX IF NOT EXISTS idx_project_invitations_email ON project_invitations(email);
 CREATE INDEX IF NOT EXISTS idx_project_invitations_project_id ON project_invitations(project_id);
 CREATE INDEX IF NOT EXISTS idx_project_invitations_status ON project_invitations(status);
+
+-- Create project_invitation_links table
+CREATE TABLE IF NOT EXISTS project_invitation_links (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_project_invitation_links_token ON project_invitation_links(token);
+CREATE INDEX IF NOT EXISTS idx_project_invitation_links_project_id ON project_invitation_links(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_invitation_links_active ON project_invitation_links(project_id, is_active) WHERE is_active = TRUE;
