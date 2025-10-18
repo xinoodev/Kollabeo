@@ -351,6 +351,29 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Invitation link methods
+  async getInvitationLink(projectId: number) {
+    return this.request(`/invitation-links/project/${projectId}`);
+  }
+
+  async createInvitationLink(projectId: number) {
+    return this.request(`/invitation-links/project/${projectId}`, {
+      method: 'POST',
+    });
+  }
+
+  async acceptInvitationLink(token: string) {
+    return this.request(`/invitation-links/accept/${token}`, {
+      method: 'POST',
+    });
+  }
+
+  async deactivateInvitationLink(projectId: number) {
+    return this.request(`/invitation-links/project/${projectId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

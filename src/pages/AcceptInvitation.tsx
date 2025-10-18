@@ -21,18 +21,24 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
     const [projectId, setProjectId] = useState<number | null>(null);
     const [projectName, setProjectName] = useState("");
     const [invitationToken, setInvitationToken] = useState<string | null>(null);
+    const [invitationType, setInvitationType] = useState<'email' | 'link' | null>(null);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("token");
+        const emailToken = urlParams.get("token");
+        const linkToken = urlParams.get("link");
 
-        if (!token) {
+        if (!emailToken && !linkToken) {
             setStatus("error");
             setMessage("Invalid invitation link");
             return;
         }
 
+        const token = emailToken || linkToken;
+        const type = emailToken ? 'email' : 'link';
+
         setInvitationToken(token);
+        setInvitationType(type);
 
         if (!user) {
             setStatus("needs-auth");
@@ -42,7 +48,15 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
 
         const acceptInvitation = async () => {
             try {
-                const result = await apiClient.acceptInvitation(token);
+                if (!token) {
+                    setStatus("error");
+                    setMessage("Invalid invitation token");
+                    return;
+                }
+                
+                const result = type === 'email'
+                    ? await apiClient.acceptInvitation(token)
+                    : await apiClient.acceptInvitationLink(token);
                 
                 if (result.alreadyMember) {
                     setStatus("already-member");
@@ -91,10 +105,15 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
 
     const handleLogin = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("token");
-        // Store the invitation token to process after login
+        const emailToken = urlParams.get("token");
+        const linkToken = urlParams.get("link");
+        const token = emailToken || linkToken;
+        const type = emailToken ? 'email' : 'link';
+
+        // Store the invitation details to process after login
         if (token) {
             sessionStorage.setItem('pendingInvitation', token);
+            sessionStorage.setItem('pendingInvitationType', type);
         }
         // Clear the URL and go back to auth
         window.history.replaceState({}, '', '/');

@@ -5,7 +5,7 @@ import { Input } from '../ui/Input';
 import { Project, ProjectMember } from '../../types';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Trash2, Shield, User as UserIcon, Crown } from 'lucide-react';
+import { UserPlus, Trash2, Shield, User as UserIcon, Crown, Link2, Copy, Check, RefreshCw } from 'lucide-react';
 
 interface MembersModalProps {
   isOpen: boolean;
@@ -25,6 +25,10 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [emailPreview, setEmailPreview] = useState('');
+  const [invitationLink, setInvitationLink] = useState<any>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [showInviteLink, setShowInviteLink] = useState(false);
   const { user } = useAuth();
 
   const currentUserMember = members.find(m => m.user_id === user?.id);
@@ -36,7 +40,9 @@ export const MembersModal: React.FC<MembersModalProps> = ({
       setError('');
       setSuccess('');
       setEmailPreview('');
+      setLinkCopied(false);
       fetchMembers();
+      fetchInvitationLink();
     }
   }, [isOpen, project.id]);
 
@@ -46,6 +52,55 @@ export const MembersModal: React.FC<MembersModalProps> = ({
       setMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
+    }
+  };
+
+  const fetchInvitationLink = async () => {
+    if (!isAdmin) return;
+    try {
+      const data = await apiClient.getInvitationLink(project.id);
+      setInvitationLink(data.link);
+    } catch (error) {
+      console.error('Error fetching invitation link:', error);
+    }
+  };
+
+  const handleCreateLink = async () => {
+    setLinkLoading(true);
+    setError('');
+    try {
+      const data = await apiClient.createInvitationLink(project.id);
+      setInvitationLink(data.link);
+      setSuccess(data.message);
+    } catch (error: any) {
+      setError(error.message || 'Error creating invitation link');
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (invitationLink) {
+      const fullLink = `${window.location.origin}/accept-invitation?link=${invitationLink.token}`;
+      navigator.clipboard.writeText(fullLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
+
+  const handleDeactivateLink = async () => {
+    if (!window.confirm('Are you sure you want to deactivate this invitation link?')) {
+      return;
+    }
+    setLinkLoading(true);
+    try {
+      await apiClient.deactivateInvitationLink(project.id);
+      setInvitationLink(null);
+      setSuccess('Invitation link deactivated');
+    } catch (error: any) {
+      setError(error.message || 'Error deactivating link');
+    } finally {
+      setLinkLoading(false);
     }
   };
 
@@ -123,11 +178,36 @@ export const MembersModal: React.FC<MembersModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Project Members" size="lg">
       <div className="space-y-6">
         {isAdmin && (
-          <form onSubmit={handleAddMember} className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              <UserPlus className="h-4 w-4" />
-              <span>Invite New Member</span>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setShowInviteLink(false)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  !showInviteLink
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Invite by Email</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInviteLink(true)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  showInviteLink
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <Link2 className="h-4 w-4" />
+                <span>Invitation Link</span>
+              </button>
             </div>
+
+            {!showInviteLink ? (
+              <form onSubmit={handleAddMember} className="space-y-4">
 
             {error && (
               <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
@@ -179,6 +259,85 @@ export const MembersModal: React.FC<MembersModalProps> = ({
               {loading ? 'Sending Invitation...' : 'Send Invitation'}
             </Button>
           </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  Create a shareable link that anyone can use to join the project. The link expires after 7 days.
+                </div>
+
+                {error && (
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                    {success}
+                  </div>
+                )}
+
+                {invitationLink ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <Input
+                        value={`${window.location.origin}/accept-invitation?link=${invitationLink.token}`}
+                        readOnly
+                        className="flex-1 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCopyLink}
+                        variant="outline"
+                        className="flex-shrink-0"
+                      >
+                        {linkCopied ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Expires: {new Date(invitationLink.expires_at).toLocaleString()}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={handleCreateLink}
+                        disabled={linkLoading}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Generate New Link
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleDeactivateLink}
+                        disabled={linkLoading}
+                        variant="outline"
+                        className="flex-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        Deactivate Link
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleCreateLink}
+                    disabled={linkLoading}
+                    fullWidth
+                  >
+                    {linkLoading ? 'Creating Link...' : 'Create Invitation Link'}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         <div>

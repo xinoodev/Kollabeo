@@ -20,24 +20,28 @@ function AppContent() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const emailToken = urlParams.get('token');
+    const linkToken = urlParams.get('link');
 
     // Check if we're on a special page
-    if (token && (window.location.pathname === '/verify-email' || window.location.pathname === '/reset-password')) {
+    if (emailToken && (window.location.pathname === '/verify-email' || window.location.pathname === '/reset-password')) {
       return;
     }
 
     // Check for invitation in URL
-    if (token && window.location.pathname === '/accept-invitation') {
+    if ((emailToken || linkToken) && window.location.pathname === '/accept-invitation') {
       setCurrentView('invitation');
       return;
     }
 
     // Check for pending invitation after login
     const pendingInvitation = sessionStorage.getItem('pendingInvitation');
+    const pendingInvitationType = sessionStorage.getItem('pendingInvitationType');
     if (pendingInvitation && user) {
       sessionStorage.removeItem('pendingInvitation');
-      window.history.replaceState({}, '', `/accept-invitation?token=${pendingInvitation}`);
+      sessionStorage.removeItem('pendingInvitationType');
+      const paramName = pendingInvitationType === 'link' ? 'link' : 'token';
+      window.history.replaceState({}, '', `/accept-invitation?${paramName}=${pendingInvitation}`);
       setCurrentView('invitation');
     }
   }, [user]);
