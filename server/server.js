@@ -10,6 +10,7 @@ import profileRoutes from './routes/profile.js';
 import commentRoutes from './routes/comments.js';
 import collaboratorRoutes from './routes/collaborators.js';
 import invitationRoutes from './routes/invitations.js';
+import invitationLinkRoutes from './routes/invitation-links.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/collaborators', collaboratorRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/invitation-links', invitationLinkRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
