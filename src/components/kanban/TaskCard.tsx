@@ -76,7 +76,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         </div>
 
         {task.description && (
-          <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">{task.description}</p>
+          <div
+            className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2"
+            dangerouslySetInnerHTML={{ __html: task.description }}
+          />
         )}
 
         {task.tags.length > 0 && (
