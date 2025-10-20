@@ -51,6 +51,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const sanitizeDescription = (hmtl: string): string => {
+    const temp = document.createElement('div');
+    temp.innerHTML = hmtl;
+
+    const checkboxes = temp.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+      checkbox.setAttribute('disabled', 'true');
+    });
+
+    const editableElements = temp.querySelectorAll('[contenteditable]');
+    editableElements.forEach(element => {
+      element.removeAttribute('contenteditable');
+    });
+
+    return temp.innerHTML;
+  };
+
   const commentsCount = task.comments_count ?? 0;
 
   return (
@@ -78,7 +95,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         {task.description && (
           <div
             className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2"
-            dangerouslySetInnerHTML={{ __html: task.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeDescription(task.description) }}
           />
         )}
 
