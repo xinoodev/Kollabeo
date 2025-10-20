@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { RichTextEditor } from '../ui/RichTextEditor';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -79,12 +80,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Description (optional)
           </label>
-          <textarea
+          <RichTextEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-            rows={4}
+            onChange={setDescription}
             placeholder="Enter task description"
+            minHeight="150px"
           />
         </div>
 

@@ -166,7 +166,10 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           {task.description && (
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{task.description}</p>
+              <div
+                className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
             </div>
           )}
 
