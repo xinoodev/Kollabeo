@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { HexColorPicker } from "react-colorful";
 import {
     Bold,
     Italic,
@@ -20,20 +21,9 @@ interface RichTextEditorProps {
     checkboxStates?: Record<string, boolean>;
 }
 
-const COLORS = [
-  { label: 'Black', value: '#000000' },
-  { label: 'Gray', value: '#6B7280' },
-  { label: 'Red', value: '#EF4444' },
-  { label: 'Orange', value: '#F97316' },
-  { label: 'Yellow', value: '#EAB308' },
-  { label: 'Green', value: '#10B981' },
-  { label: 'Blue', value: '#3B82F6' },
-  { label: 'Purple', value: '#8B5CF6' },
-];
-
 const TOOLBAR_BUTTON_COLORS = {
     bold: 'hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-    italic: 'hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    italic: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400',
     underline: 'hover:bg-cyan-100 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400',
     alignLeft: 'hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400',
     alignCenter: 'hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400',
@@ -53,6 +43,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [selectedColor, setSelectedColor] = useState("#000000");
 
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
@@ -191,27 +182,47 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                         type="button"
                         onClick={() => setShowColorPicker(!showColorPicker)}
                         title="Text Color"
-                        className={`p-2 rounded transition-colors ${TOOLBAR_BUTTON_COLORS.color}`}
+                        className={`p-2 rounded transition-colors ${TOOLBAR_BUTTON_COLORS.color} flex items-center gap-1`}
                     >
                         <Type className="w-4 h-4" />
+                        <div
+                            className="w-4 h-4 rounded border border-gray-400 dark:border-gray-500"
+                            style={{ backgroundColor: selectedColor }}
+                        />
                     </button>
 
                     {showColorPicker && (
-                        <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 flex flex-wrap gap-1 w-48">
-                            {COLORS.map((color) => (
-                                <button
-                                    key={color.value}
-                                    type="button"
-                                    onClick={() => {
-                                        executeCommand('foreColor', color.value);
-                                        setShowColorPicker(false);
+                        <div className="absolute top-full left-0 mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10">
+                            <HexColorPicker
+                                color={selectedColor}
+                                onChange={(color) => {
+                                    setSelectedColor(color);
+                                    executeCommand('foreColor', color);
+                                }}
+                            />
+                            <div className="mt-2 flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={selectedColor}
+                                    onChange={(e) => {
+                                        const color = e.target.value;
+                                        if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+                                            setSelectedColor(color);
+                                            executeCommand('foreColor', color);
+                                        }
                                     }}
-                                    title={color.label}
-                                    className="w-6 h-6 rounded border border-gray-300 dark:border-gray-600 hover:scale-110 transition-transform"
-                                    style={{ backgroundColor: color.value }}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    placeholder="#000000"
                                 />
-                            ))}
-                        </div>   
+                                <button
+                                    type="button"
+                                    onClick={() => setShowColorPicker(false)}
+                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
