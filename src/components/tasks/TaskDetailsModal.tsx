@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Task } from '../../types';
@@ -36,34 +36,23 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { user } = useAuth();
   const descriptionRef = useRef<HTMLDivElement>(null);
+  const isUpdatingCheckboxes = useRef(false);
 
-  // Move the useEffect BEFORE the early return
-  useEffect(() => {
-    if (!descriptionRef.current || !task?.description) return;
+  const updateCheckboxStates = useCallback(async (event: Event) => {
+    if (!descriptionRef.current || !task || isUpdatingCheckboxes.current) return;
 
-    const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+    isUpdatingCheckboxes.current = true;
 
-    checkboxes.forEach(checkbox => {
-      const id = checkbox.getAttribute('data-checkbox-id');
-      if (id && task.checkbox_states && task.checkbox_states[id] !== undefined) {
-        checkbox.checked = task.checkbox_states[id];
-      }
-
-      checkbox.addEventListener('change', updateCheckboxStates);
-    });
-
-    return () => {
-      checkboxes.forEach(checkbox => {
-        checkbox.removeEventListener('change', updateCheckboxStates);
-      });
-    };
-  }, [task?.description, task?.checkbox_states, task?.id]);
-
-  const updateCheckboxStates = async () => {
-    if (!descriptionRef.current || !task) return;
+    const target = event.target as HTMLInputElement;
+    const checkboxId = target.getAttribute('data-checkbox-id');
+    
+    if (!checkboxId) {
+      isUpdatingCheckboxes.current = false;
+      return;
+    }
 
     const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
-    const states: Record<string, boolean> = {};
+    const states: Record<string, boolean> = { ...(task.checkbox_states || {}) };
 
     checkboxes.forEach(checkbox => {
       const id = checkbox.getAttribute('data-checkbox-id');
@@ -79,10 +68,42 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
       onUpdate();
     } catch (error) {
       console.error('Error updating checkbox states:', error);
+      target.checked = !target.checked;
+    } finally {
+      isUpdatingCheckboxes.current = false;
     }
-  };
+  }, [task, onUpdate]);
 
-  // NOW the early return is safe - after all hooks
+  useEffect(() => {
+    if (!descriptionRef.current || !task?.description || !isOpen) return;
+
+    const timeoutId = setTimeout(() => {
+      if (!descriptionRef.current) return;
+
+      const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+
+      checkboxes.forEach(checkbox => {
+        const id = checkbox.getAttribute('data-checkbox-id');
+        if (id && task.checkbox_states && task.checkbox_states[id] !== undefined) {
+          checkbox.checked = task.checkbox_states[id];
+        }
+
+        checkbox.removeEventListener('change', updateCheckboxStates);
+        checkbox.addEventListener('change', updateCheckboxStates);
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (!descriptionRef.current) return;
+      
+      const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+      checkboxes.forEach(checkbox => {
+        checkbox.removeEventListener('change', updateCheckboxStates);
+      });
+    };
+  }, [task?.description, task?.checkbox_states, task?.id, isOpen, updateCheckboxStates]);
+
   if (!task) return null;
 
   const handleEdit = async () => {

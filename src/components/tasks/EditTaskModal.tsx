@@ -118,7 +118,6 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   const handleClose = () => {
     onClose();
-    // Reset form when closing
     if (task) {
       setTitle(task.title);
       setDescription(task.description || '');
