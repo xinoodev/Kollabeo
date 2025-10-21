@@ -104,7 +104,7 @@ router.put('/:id', authenticateToken, [
     }
 
     const { id } = req.params;
-    const { title, description, priority, due_date, assignee_id, tags } = req.body;
+    const { title, description, priority, due_date, assignee_id, tags, checkbox_states } = req.body;
 
     const taskResult = await pool.query('SELECT project_id FROM tasks WHERE id = $1', [id]);
     if (taskResult.rows.length === 0) {
@@ -143,6 +143,10 @@ router.put('/:id', authenticateToken, [
     if (tags !== undefined) {
       updates.push(`tags = $${paramCount++}`);
       values.push(tags);
+    }
+    if (checkbox_states !== undefined) {
+      updates.push(`checkbox_states = $${paramCount++}`);
+      values.push(JSON.stringify(checkbox_states));
     }
 
     if (updates.length === 0) {
