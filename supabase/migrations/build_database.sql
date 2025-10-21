@@ -242,3 +242,17 @@ CREATE TABLE IF NOT EXISTS project_invitation_links (
 CREATE INDEX IF NOT EXISTS idx_project_invitation_links_token ON project_invitation_links(token);
 CREATE INDEX IF NOT EXISTS idx_project_invitation_links_project_id ON project_invitation_links(project_id);
 CREATE INDEX IF NOT EXISTS idx_project_invitation_links_active ON project_invitation_links(project_id, is_active) WHERE is_active = TRUE;
+
+-- Add checkbox_states column to tasks table
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'tasks' AND column_name = 'checkbox_states'
+  ) THEN
+    ALTER TABLE tasks ADD COLUMN checkbox_states JSONB DEFAULT '{}';
+  END IF;
+END $$;
+
+-- Create index for better performance when querying checkbox states
+CREATE INDEX IF NOT EXISTS idx_tasks_checkbox_states ON tasks USING gin(checkbox_states);
