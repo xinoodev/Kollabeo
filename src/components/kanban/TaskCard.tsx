@@ -58,6 +58,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     const checkboxes = temp.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
       checkbox.setAttribute('disabled', 'true');
+
+      const id = checkbox.getAttribute('data-checkbox-id');
+      if (id && task.checkbox_states && task.checkbox_states[id] !== undefined) {
+        if (task.checkbox_states[id]) {
+          checkbox.setAttribute('checked', 'true');
+        } else {
+          checkbox.removeAttribute('checked');
+        }
+      }
     });
 
     const editableElements = temp.querySelectorAll('[contenteditable]');

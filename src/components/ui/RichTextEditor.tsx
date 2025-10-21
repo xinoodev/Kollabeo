@@ -17,6 +17,7 @@ interface RichTextEditorProps {
     onChange: (value: string) => void;
     placeholder?: string;
     minHeight?: string;
+    checkboxStates?: Record<string, boolean>;
 }
 
 const COLORS = [
@@ -47,7 +48,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     value,
     onChange,
     placeholder = 'Enter text...',
-    minHeight = '120px'
+    minHeight = '120px',
+    checkboxStates = {}
 }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -55,8 +57,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
+
+            const checkboxes = editorRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+            checkboxes.forEach(checkbox => {
+                const id = checkbox.getAttribute('data-checkbox-id');
+                if (id && checkboxStates[id] !== undefined) {
+                    checkbox.checked = checkboxStates[id];
+                }
+            });
         }
-    }, [value]);
+    }, [value, checkboxStates]);
 
     const handleInput = () => {
         if (editorRef.current) {
@@ -74,10 +84,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const selection = window.getSelection();
         if (!selection || !editorRef.current) return;
 
+        const checkboxId = `checkbox-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const checkList = document.createElement('div');
         checkList.className = 'flex items-start gap-2 my-1'
         checkList.innerHTML = `
-            <input type="checkbox" class="mt-1 rounded" />
+            <input type="checkbox" class="mt-1 rounded" data-checkbox-id="${checkboxId}" />
             <span contenteditable="true" class="flex-1">Checklist item</span>
         `;
 

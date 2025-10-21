@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Task } from '../../types';
@@ -35,7 +35,54 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [assignLoading, setAssignLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { user } = useAuth();
+  const descriptionRef = useRef<HTMLDivElement>(null);
 
+  // Move the useEffect BEFORE the early return
+  useEffect(() => {
+    if (!descriptionRef.current || !task?.description) return;
+
+    const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+
+    checkboxes.forEach(checkbox => {
+      const id = checkbox.getAttribute('data-checkbox-id');
+      if (id && task.checkbox_states && task.checkbox_states[id] !== undefined) {
+        checkbox.checked = task.checkbox_states[id];
+      }
+
+      checkbox.addEventListener('change', updateCheckboxStates);
+    });
+
+    return () => {
+      checkboxes.forEach(checkbox => {
+        checkbox.removeEventListener('change', updateCheckboxStates);
+      });
+    };
+  }, [task?.description, task?.checkbox_states, task?.id]);
+
+  const updateCheckboxStates = async () => {
+    if (!descriptionRef.current || !task) return;
+
+    const checkboxes = descriptionRef.current.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-checkbox-id]');
+    const states: Record<string, boolean> = {};
+
+    checkboxes.forEach(checkbox => {
+      const id = checkbox.getAttribute('data-checkbox-id');
+      if (id) {
+        states[id] = checkbox.checked;
+      }
+    });
+
+    try {
+      await apiClient.updateTask(task.id, {
+        checkbox_states: states
+      });
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating checkbox states:', error);
+    }
+  };
+
+  // NOW the early return is safe - after all hooks
   if (!task) return null;
 
   const handleEdit = async () => {
@@ -95,7 +142,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const handleEditSuccess = () => {
     onUpdate();
     setIsEditModalOpen(false);
-    onClose(); // Close the TaskDetailsModal as well
+    onClose();
   };
 
   const handleCommentAdded = () => {
@@ -167,6 +214,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
               <div
+                ref={descriptionRef}
                 className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: task.description }}
               />

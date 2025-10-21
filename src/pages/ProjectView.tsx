@@ -74,8 +74,20 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
     setIsTaskDetailsModalOpen(true);
   };
 
-  const handleTaskUpdate = () => {
+  const handleTaskUpdate = async () => {
     setRefreshTrigger(prev => prev + 1);
+
+    if (selectedTask) {
+      try {
+        const tasks = await apiClient.getTasks(project.id);
+        const updatedTask = tasks.find((t: Task) => t.id === selectedTask.id);
+        if (updatedTask) {
+          setSelectedTask(updatedTask);
+        }
+      } catch (error) {
+        console.error('Error refreshing selected task:', error);
+      }
+    }
   };
 
   const handleProjectCreated = () => {

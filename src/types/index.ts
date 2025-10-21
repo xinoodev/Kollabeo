@@ -41,6 +41,7 @@ export interface Task {
   created_at: string;
   updated_at: string;
   comments_count?: number;
+  checkbox_states?: Record<string, boolean>;
 }
 
 export interface TaskComment {

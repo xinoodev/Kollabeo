@@ -150,6 +150,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
             onChange={setDescription}
             placeholder="Enter task description"
             minHeight="150px"
+            checkboxStates={task.checkbox_states}
           />
         </div>
 
