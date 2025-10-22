@@ -94,3 +94,33 @@ button, a, [role="button"] {
 .dragging * {
   pointer-events: none;
 }
+
+@keyframes fadeInSlow {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-slow {
+  animation: fadeInSlow 400ms ease-out;
+}
+
+@keyframes fadeOutSlow {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.fade-out-slow {
+  animation: fadeOutSlow 200ms ease-out;
+}

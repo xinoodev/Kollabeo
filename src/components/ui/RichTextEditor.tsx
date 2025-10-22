@@ -43,7 +43,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
     const [selectedColor, setSelectedColor] = useState("#000000");
+
+    useEffect(() => {
+        if (showColorPicker) {
+            setIsColorPickerVisible(true);
+        } else {
+            const timer = setTimeout(() => {
+                setIsColorPickerVisible(false);
+            }, 200);
+            return () => clearTimeout(timer);
+        }
+    }, [showColorPicker]);
 
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
@@ -191,8 +203,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                         />
                     </button>
 
-                    {showColorPicker && (
-                        <div className="absolute top-full right-[-2.5rem] mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-b-lg shadow-xl z-[100]">
+                    {isColorPickerVisible && (
+                        <div 
+                            className={`absolute top-full right-[-2.5rem] mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-b-lg shadow-xl z-[100] animate-in ${
+                                showColorPicker 
+                                    ? 'fade-in-slow' 
+                                    : 'fade-out-slow'
+                            }`}
+                        >
                             <HexColorPicker
                                 color={selectedColor}
                                 onChange={(color) => {
