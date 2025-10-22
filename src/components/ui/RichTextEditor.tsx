@@ -112,8 +112,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     );
 
     return (
-        <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-700">
-            <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+        <div className="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+            <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-visible">
                 <ToolbarButton
                     onClick={() => executeCommand('bold')}
                     icon={<Bold className="w-4 h-4" />}
@@ -192,15 +192,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     </button>
 
                     {showColorPicker && (
-                        <div className="absolute top-full left-0 mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10">
+                        <div className="absolute top-full right-[-2.5rem] mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-b-lg shadow-xl z-[100]">
                             <HexColorPicker
                                 color={selectedColor}
                                 onChange={(color) => {
                                     setSelectedColor(color);
                                     executeCommand('foreColor', color);
                                 }}
+                                style={{ width: '180px', height: '150px' }}
                             />
-                            <div className="mt-2 flex items-center gap-2">
+                            <div className="mt-3 flex items-center justify-center gap-2">
                                 <input
                                     type="text"
                                     value={selectedColor}
@@ -211,13 +212,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                                             executeCommand('foreColor', color);
                                         }
                                     }}
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
                                     placeholder="#000000"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowColorPicker(false)}
-                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                                 >
                                     OK
                                 </button>
@@ -253,6 +254,26 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
                 [contenteditable] input[type="checkbox"] {
                     cursor: pointer;
+                }
+
+                .react-colorful {
+                    gap: 12px;
+                }
+
+                .react-colorful__saturation,
+                .react-colorful__interactive {
+                    border: none;
+                }
+
+                .react-colorful__saturation-pointer,
+                .react-colorful__hue-pointer {
+                    width: 14px !important;
+                    height: 14px !important;
+                }
+
+                .react-colorful__last-control {
+                    height: 14px;
+                    border-radius: 0 0 8px 8px;
                 }
             `}</style>
         </div>
