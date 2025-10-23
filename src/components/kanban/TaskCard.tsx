@@ -103,10 +103,36 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
         {task.description && (
           <div
-            className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2"
+            className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 task-card-content"
             dangerouslySetInnerHTML={{ __html: sanitizeDescription(task.description) }}
           />
         )}
+
+        <style>{`
+          .task-card-content ul,
+          .task-card-content ol {
+            padding-left: 1.75rem !important;
+            margin: 0.5rem 0 !important;
+            list-style-position: outside !important;
+          }
+          .task-card-content ul {
+            list-style-type: disc !important;
+          }
+          .task-card-content ol {
+            list-style-type: decimal !important;
+          }
+          .task-card-content li {
+            margin: 0.25rem 0 !important;
+            display: list-item !important;
+            margin-left: 0 !important;
+          }
+          .task-card-content ul li {
+            list-style-type: disc !important;
+          }
+          .task-card-content ol li {
+            list-style-type: decimal !important;
+          }
+        `}</style>
 
         {task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
