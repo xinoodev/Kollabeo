@@ -236,11 +236,37 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
               <div
                 ref={descriptionRef}
-                className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none"
+                className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none task-card-content"
                 dangerouslySetInnerHTML={{ __html: task.description }}
               />
             </div>
           )}
+
+          <style>{`
+            .task-card-content ul,
+            .task-card-content ol {
+              padding-left: 1.75rem !important;
+              margin: 0.5rem 0 !important;
+              list-style-position: outside !important;
+            }
+            .task-card-content ul {
+              list-style-type: disc !important;
+            }
+            .task-card-content ol {
+              list-style-type: decimal !important;
+            }
+            .task-card-content li {
+              margin: 0.25rem 0 !important;
+              display: list-item !important;
+              margin-left: 0 !important;
+            }
+            .task-card-content ul li {
+              list-style-type: disc !important;
+            }
+            .task-card-content ol li {
+              list-style-type: decimal !important;
+            }
+          `}</style>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {task.due_date && (
