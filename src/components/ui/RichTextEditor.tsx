@@ -71,6 +71,49 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
     }, [value, checkboxStates]);
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter") {
+            const selection = window.getSelection();
+            if (!selection || !editorRef.current) return;
+
+            const range = selection.getRangeAt(0);
+            const currentNode = range.startContainer;
+
+            let checklistDiv = currentNode.nodeType === Node.TEXT_NODE
+                ? currentNode.parentElement
+                : currentNode as HTMLElement;
+            
+            while (checklistDiv && checklistDiv !== editorRef.current) {
+                if (checklistDiv.classList?.contains('checklist-item')) {
+                    e.preventDefault();
+
+                    const checkboxId = `checkbox-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const newCheckList = document.createElement('div');
+                    newCheckList.className = 'checklist-item flex items-start gap-2 my-1';
+                    newCheckList.innerHTML = `
+                        <input type="checkbox" class="mt-1 rounded" data-checkbox-id="${checkboxId}" />
+                        <span contenteditable="true" class="flex-1"></span>
+                    `;
+
+                    checklistDiv.insertAdjacentElement('afterend', newCheckList);
+
+                    const newSpan = newCheckList.querySelector('span');
+                    if (newSpan) {
+                        const newRange = document.createRange();
+                        newRange.setStart(newSpan, 0);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+                    }
+
+                    handleInput();
+                    return;
+                }
+                checklistDiv = checklistDiv.parentElement;
+            }
+        }
+    };
+
     const handleInput = () => {
         if (editorRef.current) {
             onChange(editorRef.current.innerHTML);
@@ -89,7 +132,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         const checkboxId = `checkbox-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const checkList = document.createElement('div');
-        checkList.className = 'flex items-start gap-2 my-1'
+        checkList.className = 'checklist-item flex items-start gap-2 my-1'
         checkList.innerHTML = `
             <input type="checkbox" class="mt-1 rounded" data-checkbox-id="${checkboxId}" />
             <span contenteditable="true" class="flex-1">Checklist item</span>
@@ -250,6 +293,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 ref={editorRef}
                 contentEditable
                 onInput={handleInput}
+                onKeyDown={handleKeyDown}
                 className="p-3 focus:outline-none text-gray-900 dark:text-white overflow-y-auto"
                 style={{ minHeight }}
                 data-placeholder={placeholder}
@@ -262,33 +306,44 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     pointer-events: none;
                     display: block;
                 }
-                [contenteditable]:ul,
-                [contenteditable]:ol {
-                    paddint-left: 1.5rem;
-                    margin: 0.5rem 0;
+                [contenteditable] ul,
+                [contenteditable] ol {
+                    padding-left: 2.5rem !important;
+                    margin: 0.5rem 0 !important;
+                    list-style-position: outside !important;
+                }
+                [contenteditable] ul {
+                    list-style-type: disc !important;
+                }
+                [contenteditable] ol {
+                    list-style-type: decimal !important;
                 }
                 [contenteditable] li {
-                    margin: 0.25rem 0;
+                    margin: 0.25rem 0 !important;
+                    display: list-item !important;
+                    margin-left: 0 !important;
+                }
+                [contenteditable] ul li {
+                    list-style-type: disc !important;
+                }
+                [contenteditable] ol li {
+                    list-style-type: decimal !important;
                 }
                 [contenteditable] input[type="checkbox"] {
                     cursor: pointer;
                 }
-
                 .react-colorful {
                     gap: 12px;
                 }
-
                 .react-colorful__saturation,
                 .react-colorful__interactive {
                     border: none;
                 }
-
                 .react-colorful__saturation-pointer,
                 .react-colorful__hue-pointer {
                     width: 14px !important;
                     height: 14px !important;
                 }
-
                 .react-colorful__last-control {
                     height: 14px;
                     border-radius: 0 0 8px 8px;
