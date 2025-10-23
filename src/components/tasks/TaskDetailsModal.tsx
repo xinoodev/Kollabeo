@@ -312,7 +312,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           </div>
 
           <div className="border-t pt-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
               Created {format(new Date(task.created_at), 'PPp')}
               {task.updated_at !== task.created_at && (
                 <span> • Updated {format(new Date(task.updated_at), 'PPp')}</span>
