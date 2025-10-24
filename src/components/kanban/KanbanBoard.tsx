@@ -169,7 +169,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const activeId = active.id;
     const overId = over.id;
 
-    // Handle column reordering
     const activeColumnMatch = String(activeId).match(/^column-(\d+)$/);
     const overColumnMatch = String(overId).match(/^column-(\d+)$/);
 
@@ -195,7 +194,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           await apiClient.reorderColumns(project.id, reorderedColumns);
         } catch (error) {
           console.error('Error reordering columns:', error);
-          // Revert the optimistic update
           fetchData();
         }
       }
@@ -203,7 +201,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       return;
     }
 
-    // Handle task movement
     if (draggedTask && originalColumnId !== null) {
       const overTask = tasks.find(t => t.id === overId);
       const overColumnMatch = String(overId).match(/^column-(\d+)$/);
