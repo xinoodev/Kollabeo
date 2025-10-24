@@ -316,12 +316,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               </div>
             )}
 
-            {task.assignee_id && (
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
-                  <User className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                  Assigned to
-                </h4>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                <User className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
+                Assigned to
+              </h4>
+              {task.assignee_id ? (
                 <div className="flex items-center space-x-2">
                   {user?.avatar_url ? (
                     <>
@@ -331,7 +331,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        {task.assignee_name || 'Unknown User'}
+                        {task.assignee_name || "Unknown User"}
                       </span>
                     </>
                   ) : (
@@ -340,21 +340,23 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       <span className="text-gray-700 dark:text-gray-300">
-                        {task.assignee_name || 'Unknown User'}
+                        {task.assignee_name || "Unknown User"}
                       </span>
                     </>
                   )}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No one assigned</p>
+              )}
+            </div>
           </div>
 
-          {collaborators.length > 0 && (
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
-                <Users className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                Collaborators ({collaborators.length})
-              </h4>
+          <div>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+              <Users className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
+              Collaborators ({collaborators.length})
+            </h4>
+            {collaborators.length > 0 ? (
               <div className="flex flex-wrap gap-3">
                 {collaborators.map((collaborator) => (
                   <div
@@ -364,7 +366,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     {collaborator.avatar_url ? (
                       <img
                         src={collaborator.avatar_url}
-                        alt={collaborator.username || collaborator.full_name}
+                        alt={collaborator?.username || collaborator?.full_name}
                         className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                       />
                     ) : (
@@ -373,13 +375,15 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                       </div>
                     )}
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {collaborator.username || collaborator.full_name || collaborator.email || 'Unknown User'}
+                      {collaborator.username || collaborator.full_name || collaborator.email || "Unknown User"}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No collaborators</p>
+            )}
+          </div>
 
           <div className="border-t pt-4">
             <TaskComments taskId={task.id} onCommentAdded={handleCommentAdded} />
