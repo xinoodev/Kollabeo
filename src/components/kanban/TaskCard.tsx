@@ -103,7 +103,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
         {task.description && (
           <div
-            className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 task-card-content"
+            className="text-xs text-gray-600 dark:text-gray-300 line-clamp-4 task-card-content"
             dangerouslySetInnerHTML={{ __html: sanitizeDescription(task.description) }}
           />
         )}
