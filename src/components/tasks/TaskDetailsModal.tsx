@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { Task } from '../../types';
+import { Task, TaskCollaborator } from '../../types';
 import { Calendar, Tag, AlertCircle, Pencil, Trash2, User, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiClient } from '../../lib/api';
@@ -34,6 +34,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [collaborators, setCollaborators] = useState<TaskCollaborator[]>([]);
   const { user } = useAuth();
   const descriptionRef = useRef<HTMLDivElement>(null);
   const isUpdatingCheckboxes = useRef(false);
@@ -103,6 +104,21 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
       });
     };
   }, [task?.description, task?.checkbox_states, task?.id, isOpen, updateCheckboxStates]);
+
+  useEffect(() => {
+    if (!task || !isOpen) return;
+
+    const loadingCollaborators = async () => {
+      try {
+        const data = await apiClient.getCollaborators(task.id);
+        setCollaborators(data);
+      } catch (error) {
+        console.error('Error loading collaborators:', error);
+      }
+    };
+
+    loadingCollaborators();
+  }, [task, isOpen]);
 
   if (!task) return null;
 
