@@ -10,7 +10,8 @@ import {
     List,
     ListOrdered,
     CheckSquare,
-    Type
+    Type,
+    RotateCcw
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -32,6 +33,7 @@ const TOOLBAR_BUTTON_COLORS = {
     orderedList: 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
     checklist: 'hover:bg-pink-100 dark:hover:bg-pink-900/30 text-pink-600 dark:text-pink-400',
     color: 'hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400',
+    reset: 'hover:bg-slate-100 dark:hover:bg-slate-900/30 text-slate-600 dark:text-slate-400',
 };
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -72,17 +74,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, [value, checkboxStates]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === "Enter") {
-            const selection = window.getSelection();
-            if (!selection || !editorRef.current) return;
+        const selection = window.getSelection();
+        if (!selection || !editorRef.current) return;
 
+        if (e.key === "Enter") {
             const range = selection.getRangeAt(0);
             const currentNode = range.startContainer;
 
             let checklistDiv = currentNode.nodeType === Node.TEXT_NODE
                 ? currentNode.parentElement
                 : currentNode as HTMLElement;
-            
+
             while (checklistDiv && checklistDiv !== editorRef.current) {
                 if (checklistDiv.classList?.contains('checklist-item')) {
                     e.preventDefault();
@@ -150,6 +152,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         handleInput();
     };
 
+    const resetFormatting = () => {
+        executeCommand('removeFormat');
+    };
+
     const ToolbarButton: React.FC<{
         onClick: () => void;
         icon: React.ReactNode;
@@ -168,7 +174,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     return (
         <div className="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
-            <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-visible rounded-t-lg">
+            <div className="flex flex-wrap gap-[3px] p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-visible">
                 <ToolbarButton
                     onClick={() => executeCommand('bold')}
                     icon={<Bold className="w-4 h-4" />}
@@ -287,6 +293,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                         </div>
                     )}
                 </div>
+
+                <ToolbarButton
+                    onClick={resetFormatting}
+                    icon={<RotateCcw className="w-4 h-4" />}
+                    title="Reset Formatting"
+                    colorClass={TOOLBAR_BUTTON_COLORS.reset}
+                />
             </div>
 
             <div
