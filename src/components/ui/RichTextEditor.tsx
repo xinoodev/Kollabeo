@@ -168,7 +168,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     return (
         <div className="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
-            <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-visible">
+            <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-visible rounded-t-lg">
                 <ToolbarButton
                     onClick={() => executeCommand('bold')}
                     icon={<Bold className="w-4 h-4" />}
