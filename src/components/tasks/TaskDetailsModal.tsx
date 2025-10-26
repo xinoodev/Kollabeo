@@ -252,7 +252,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
               <div
                 ref={descriptionRef}
-                className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none task-card-content"
+                className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none task-card-content task-description-scroll"
                 dangerouslySetInnerHTML={{ __html: task.description }}
               />
             </div>
@@ -281,6 +281,34 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             }
             .task-card-content ol li {
               list-style-type: decimal !important;
+            }
+            .task-description-scroll {
+              max-height: 10rem;
+              overflow-y: auto;
+              padding-right: 0.5rem;
+            }
+            .task-description-scroll::-webkit-scrollbar {
+              width: 6px;
+            }
+            .task-description-scroll::-webkit-scrollbar-track {
+              background: rgba(0, 0, 0, 0.05);
+              border-radius: 3px;
+            }
+            .task-description-scroll::-webkit-scrollbar-thumb {
+              background: rgba(0, 0, 0, 0.2);
+              border-radius: 3px;
+            }
+            .task-description-scroll::-webkit-scrollbar-thumb:hover {
+              background: rgba(0, 0, 0, 0.3);
+            }
+            .dark .task-description-scroll::-webkit-scrollbar-track {
+              background: rgba(255, 255, 255, 0.05);
+            }
+            .dark .task-description-scroll::-webkit-scrollbar-thumb {
+              background: rgba(255, 255, 255, 0.2);
+            }
+            .dark .task-description-scroll::-webkit-scrollbar-thumb:hover {
+              background: rgba(255, 255, 255, 0.3);
             }
           `}</style>
 
