@@ -103,7 +103,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
         title,
         description: description || undefined,
         priority,
-        due_date: dueDate || undefined,
+        due_date: dueDate || null,
         tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
       });
 
