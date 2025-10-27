@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Task, TaskCollaborator } from '../../types';
-import { Calendar, Tag, AlertCircle, Pencil, Trash2, User, UserCheck, Users } from 'lucide-react';
+import { Calendar, Tag, AlertCircle, Pencil, Trash2, User, UserCheck, Users, Play } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { EditTaskModal } from './EditTaskModal';
 import { TaskComments } from './TaskComments';
+import { extractYouTubeLinks, YouTubeVideoInfo } from '../../utils/youtube';
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [assignLoading, setAssignLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [collaborators, setCollaborators] = useState<TaskCollaborator[]>([]);
+  const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoInfo[]>([]);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const { user } = useAuth();
   const descriptionRef = useRef<HTMLDivElement>(null);
   const isUpdatingCheckboxes = useRef(false);
@@ -118,6 +121,13 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     };
 
     loadCollaborators();
+
+    if (task.description) {
+      const videos = extractYouTubeLinks(task.description);
+      setYoutubeVideos(videos);
+    } else {
+      setYoutubeVideos([]);
+    }
   }, [task, isOpen]);
 
   if (!task) return null;
@@ -255,6 +265,45 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none task-card-content task-description-scroll"
                 dangerouslySetInnerHTML={{ __html: task.description }}
               />
+            </div>
+          )}
+
+          {youtubeVideos.length > 0 && (
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Videos</h4>
+              <div className="space-y-4">
+                {youtubeVideos.map((video) => (
+                  <div key={video.videoId} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                    {playingVideo === video.videoId ? (
+                      <div className="relative pb-[56.25%]">
+                        <iframe
+                          className="absolute top-0 left-0 w-full h-full"
+                          src={video.embedUrl}
+                          title="YouTube video player"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="relative cursor-pointer group"
+                        onClick={() => setPlayingVideo(video.videoId)}
+                      >
+                        <img
+                          src={video.thumbnailUrl}
+                          alt="YouTube video thumbnail"
+                          className="w-full"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-50 transition-all">
+                          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Play className="w-8 h-8 text-white ml-1" fill="white" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
