@@ -132,6 +132,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           .task-card-content ol li {
             list-style-type: decimal !important;
           }
+          .task-card-content .image-container {
+            display: block;
+            margin: 0.5rem 0;
+          }
+          .task-card-content .image-container img,
+          .task-card-content img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0;
+            border-radius: 0.375rem;
+            max-height: 150px;
+            object-fit: contain;
+          }
         `}</style>
 
         {task.tags.length > 0 && (

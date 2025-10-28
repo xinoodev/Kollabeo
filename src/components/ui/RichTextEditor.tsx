@@ -52,6 +52,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const [showImageModal, setShowImageModal] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [imageAlt, setImageAlt] = useState("");
+    const savedRangeRef = useRef<Range | null>(null);
 
     useEffect(() => {
         if (showColorPicker) {
@@ -160,23 +161,57 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const insertImage = () => {
         if (!imageUrl.trim() || !editorRef.current) return;
 
+        editorRef.current.focus();
+
+        let range: Range;
         const selection = window.getSelection();
+        
+        if (savedRangeRef.current) {
+            range = savedRangeRef.current;
+            if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        } else if (selection && selection.rangeCount > 0) {
+            range = selection.getRangeAt(0);
+        } else {
+            range = document.createRange();
+            range.selectNodeContents(editorRef.current);
+            range.collapse(false);
+            if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+        imageContainer.style.cssText = 'margin: 0.5rem 0;';
+        
         const img = document.createElement('img');
         img.src = imageUrl;
-        img.alt = imageAlt || "Image";
-        img.className = "max-w-full h-auto my-2 rounded";
-        img.style.maxHeight = "400px";
+        img.alt = imageAlt || 'Image';
+        img.style.cssText = 'max-width: 100%; height: auto; display: block; border-radius: 0.375rem; max-height: 400px; object-fit: contain;';
+        
+        imageContainer.appendChild(img);
 
-        if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            range.insertNode(img);
-            range.setStartAfter(img);
-            range.collapse(true);
+        const nextLine = document.createElement('div');
+        nextLine.appendChild(document.createElement('br'));
+        
+        range.deleteContents();
+        range.insertNode(imageContainer);
+        range.setStartAfter(imageContainer);
+        range.collapse(true);
+        range.insertNode(nextLine);
+        range.setStart(nextLine, 0);
+        range.collapse(true);
+        
+        if (selection) {
             selection.removeAllRanges();
             selection.addRange(range);
-        } else {
-            editorRef.current.appendChild(img);
         }
+
+        savedRangeRef.current = null;
 
         setImageUrl("");
         setImageAlt("");
@@ -334,7 +369,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 />
 
                 <ToolbarButton
-                    onClick={() => setShowImageModal(true)}
+                    onClick={() => {
+                        const selection = window.getSelection();
+                        if (selection && selection.rangeCount > 0) {
+                            savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+                        }
+                        setShowImageModal(true);
+                    }}
                     icon={<Image className="w-4 h-4" />}
                     title="Insert Image"
                     colorClass={TOOLBAR_BUTTON_COLORS.image}
