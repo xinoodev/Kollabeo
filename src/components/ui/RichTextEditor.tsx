@@ -11,7 +11,8 @@ import {
     ListOrdered,
     CheckSquare,
     Type,
-    RotateCcw
+    RotateCcw,
+    Image
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -34,6 +35,7 @@ const TOOLBAR_BUTTON_COLORS = {
     checklist: 'hover:bg-pink-100 dark:hover:bg-pink-900/30 text-pink-600 dark:text-pink-400',
     color: 'hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400',
     reset: 'hover:bg-slate-100 dark:hover:bg-slate-900/30 text-slate-600 dark:text-slate-400',
+    image: 'hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400',
 };
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -47,6 +49,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
     const [selectedColor, setSelectedColor] = useState("#000000");
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [imageUrl, setImageUrl] = useState("");
+    const [imageAlt, setImageAlt] = useState("");
 
     useEffect(() => {
         if (showColorPicker) {
@@ -149,6 +154,33 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             selection.addRange(range);
         }
 
+        handleInput();
+    };
+
+    const insertImage = () => {
+        if (!imageUrl.trim() || !editorRef.current) return;
+
+        const selection = window.getSelection();
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = imageAlt || "Image";
+        img.className = "max-w-full h-auto my-2 rounded";
+        img.style.maxHeight = "400px";
+
+        if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.insertNode(img);
+            range.setStartAfter(img);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        } else {
+            editorRef.current.appendChild(img);
+        }
+
+        setImageUrl("");
+        setImageAlt("");
+        setShowImageModal(false);
         handleInput();
     };
 
@@ -300,6 +332,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     title="Reset Formatting"
                     colorClass={TOOLBAR_BUTTON_COLORS.reset}
                 />
+
+                <ToolbarButton
+                    onClick={() => setShowImageModal(true)}
+                    icon={<Image className="w-4 h-4" />}
+                    title="Insert Image"
+                    colorClass={TOOLBAR_BUTTON_COLORS.image}
+                />
             </div>
 
             <div
@@ -311,6 +350,64 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 style={{ minHeight }}
                 data-placeholder={placeholder}
             />
+
+            {showImageModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                            Insert Image
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Image URL
+                                </label>
+                                <input
+                                    type="url"
+                                    value={imageUrl}
+                                    onChange={(e) => setImageUrl(e.target.value)}
+                                    placeholder="https://example.com/image.jpg"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Alt Text (optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={imageAlt}
+                                    onChange={(e) => setImageAlt(e.target.value)}
+                                    placeholder="Description of the image"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div className="flex space-x-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowImageModal(false);
+                                        setImageUrl("");
+                                        setImageAlt("");
+                                    }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={insertImage}
+                                    disabled={!imageUrl.trim()}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Insert
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 [contenteditable]:empty:before {
@@ -344,6 +441,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
                 [contenteditable] input[type="checkbox"] {
                     cursor: pointer;
+                }
+                [contenteditable] img {
+                    display: block;
+                    max-width: 100%;
+                    height: auto;
+                    margin: 0.5rem 0;
+                    border-radius: 0.375rem;
                 }
                 .react-colorful {
                     gap: 12px;
