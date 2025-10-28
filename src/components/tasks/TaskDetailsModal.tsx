@@ -199,7 +199,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title={task.title} size="lg">
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div>
             <span className={`px-3 py-1 text-sm rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
               <AlertCircle className="inline w-4 h-4 mr-1" />
@@ -346,7 +346,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               object-fit: contain;
             }
             .task-description-scroll {
-              max-height: 12rem;
+              max-height: 16rem;
               overflow-y: auto;
               padding-right: 0.5rem;
             }
@@ -440,40 +440,40 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 <p className="text-sm text-gray-500 dark:text-gray-400">No one assigned</p>
               )}
             </div>
-          </div>
 
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
-              <Users className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-              Collaborators ({collaborators.length})
-            </h4>
-            {collaborators.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {collaborators.map((collaborator) => (
-                  <div
-                    key={collaborator.id}
-                    className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg"
-                  >
-                    {collaborator.avatar_url ? (
-                      <img
-                        src={collaborator.avatar_url}
-                        alt={collaborator?.username || collaborator?.full_name}
-                        className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    )}
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {collaborator.username || collaborator.full_name || collaborator.email || "Unknown User"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No collaborators</p>
-            )}
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                <Users className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
+                Collaborators ({collaborators.length})
+              </h4>
+              {collaborators.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {collaborators.map((collaborator) => (
+                    <div
+                      key={collaborator.id}
+                      className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg"
+                    >
+                      {collaborator.avatar_url ? (
+                        <img
+                          src={collaborator.avatar_url}
+                          alt={collaborator?.username || collaborator?.full_name}
+                          className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                      )}
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {collaborator.username || collaborator.full_name || collaborator.email || "Unknown User"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No collaborators</p>
+              )}
+            </div>
           </div>
 
           <div className="border-t pt-4">
