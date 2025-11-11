@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { HexColorPicker } from "react-colorful";
 import {
     Bold,
@@ -65,6 +65,32 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
     }, [showColorPicker]);
 
+    const handleInput = useCallback(() => {
+        if (editorRef.current) {
+            onChange(editorRef.current.innerHTML);
+        }
+    }, [onChange]);
+
+    const handleImageResize = useCallback((e: Event) => {
+        const slider = e.target as HTMLInputElement;
+        const imageId = slider.getAttribute('data-image-id');
+        if (!imageId || !editorRef.current) return;
+
+        const percentage = parseInt(slider.value);
+        const img = editorRef.current.querySelector(`img[data-image-id="${imageId}"]`) as HTMLImageElement;
+        const sizeLabel = editorRef.current.querySelector(`span[data-image-id="${imageId}"].image-size-label`) as HTMLSpanElement;
+
+        if (img) {
+            img.style.maxWidth = `${percentage}%`;
+        }
+
+        if (sizeLabel) {
+            sizeLabel.textContent = `${percentage}%`;
+        }
+
+        handleInput();
+    }, [handleInput]);
+
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
@@ -76,8 +102,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     checkbox.checked = checkboxStates[id];
                 }
             });
+
+            // Re-attach event listeners to image size sliders
+            const sliders = editorRef.current.querySelectorAll<HTMLInputElement>('.image-size-slider');
+            sliders.forEach(slider => {
+                slider.removeEventListener('input', handleImageResize);
+                slider.addEventListener('input', handleImageResize);
+            });
         }
-    }, [value, checkboxStates]);
+    }, [value, checkboxStates, handleImageResize]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         const selection = window.getSelection();
@@ -119,12 +152,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
                 checklistDiv = checklistDiv.parentElement;
             }
-        }
-    };
-
-    const handleInput = () => {
-        if (editorRef.current) {
-            onChange(editorRef.current.innerHTML);
         }
     };
 
@@ -184,32 +211,72 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             }
         }
 
+        const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper';
+        wrapper.setAttribute('data-image-id', imageId);
+        wrapper.style.cssText = 'margin: 0.5rem 0;';
+
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
-        imageContainer.style.cssText = 'margin: 0.5rem 0;';
-        
+        imageContainer.style.cssText = 'margin-bottom: 0.5rem;';
+
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = imageAlt || 'Image';
-        img.style.cssText = 'max-width: 100%; height: auto; display: block; border-radius: 0.375rem; max-height: 400px; object-fit: contain;';
-        
+        img.setAttribute('data-image-id', imageId);
+        img.className = 'editor-image';
+        img.style.cssText = 'max-width: 100%; height: auto; display: block; border-radius: 0.375rem; max-height: 400px; object-fit: contain; width: 100%;';
+
         imageContainer.appendChild(img);
+        wrapper.appendChild(imageContainer);
+
+        const sizeControl = document.createElement('div');
+        sizeControl.className = 'image-size-control';
+        sizeControl.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; max-width: 300px; margin-top: 0.25rem;';
+
+        const label = document.createElement('span');
+        label.textContent = 'Size:';
+        label.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 30px;';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'image-size-slider';
+        slider.setAttribute('data-image-id', imageId);
+        slider.min = '50';
+        slider.max = '100';
+        slider.value = '100';
+        slider.style.cssText = 'flex: 1; height: 4px; border-radius: 2px; background: #d1d5db; outline: none; accent-color: #3b82f6; cursor: pointer;';
+
+        const sizeLabel = document.createElement('span');
+        sizeLabel.className = 'image-size-label';
+        sizeLabel.setAttribute('data-image-id', imageId);
+        sizeLabel.textContent = '100%';
+        sizeLabel.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 30px; text-align: right;';
+
+        sizeControl.appendChild(label);
+        sizeControl.appendChild(slider);
+        sizeControl.appendChild(sizeLabel);
+        wrapper.appendChild(sizeControl);
 
         const nextLine = document.createElement('div');
         nextLine.appendChild(document.createElement('br'));
-        
+
         range.deleteContents();
-        range.insertNode(imageContainer);
-        range.setStartAfter(imageContainer);
+        range.insertNode(wrapper);
+        range.setStartAfter(wrapper);
         range.collapse(true);
         range.insertNode(nextLine);
         range.setStart(nextLine, 0);
         range.collapse(true);
-        
+
         if (selection) {
             selection.removeAllRanges();
             selection.addRange(range);
         }
+
+        slider.addEventListener('input', handleImageResize);
 
         savedRangeRef.current = null;
 
@@ -489,6 +556,49 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     height: auto;
                     margin: 0.5rem 0;
                     border-radius: 0.375rem;
+                }
+                [contenteditable] .image-wrapper {
+                    margin: 0.5rem 0;
+                }
+                [contenteditable] .image-container {
+                    margin-bottom: 0.5rem;
+                }
+                [contenteditable] .image-size-control {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem;
+                    background: #f3f4f6;
+                    border-radius: 0.375rem;
+                    max-width: 300px;
+                    margin-top: 0.25rem;
+                }
+                [contenteditable] .image-size-slider {
+                    flex: 1;
+                    height: 4px;
+                    border-radius: 2px;
+                    background: #d1d5db;
+                    outline: none;
+                    accent-color: #3b82f6;
+                    cursor: pointer;
+                }
+                [contenteditable] .image-size-slider::-webkit-slider-thumb {
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #3b82f6;
+                    cursor: pointer;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
+                [contenteditable] .image-size-slider::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #3b82f6;
+                    cursor: pointer;
+                    border: none;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                 }
                 .react-colorful {
                     gap: 12px;
