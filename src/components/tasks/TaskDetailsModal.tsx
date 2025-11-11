@@ -331,9 +331,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             .task-card-content ol li {
               list-style-type: decimal !important;
             }
+            .task-card-content .image-wrapper {
+              margin: 0.5rem 0;
+            }
             .task-card-content .image-container {
               display: block;
-              margin: 0.5rem 0;
+              margin: 0 !important;
             }
             .task-card-content .image-container img,
             .task-card-content img {
@@ -344,6 +347,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               border-radius: 0.375rem;
               max-height: 400px;
               object-fit: contain;
+            }
+            .task-card-content .image-size-control {
+              display: none !important;
+              height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
             .task-description-scroll {
               max-height: 16rem;
