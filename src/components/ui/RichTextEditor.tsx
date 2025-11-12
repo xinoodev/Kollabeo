@@ -12,7 +12,8 @@ import {
     CheckSquare,
     Type,
     RotateCcw,
-    Image
+    Image,
+    Link as LinkIcon
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -36,6 +37,7 @@ const TOOLBAR_BUTTON_COLORS = {
     color: 'hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400',
     reset: 'hover:bg-slate-100 dark:hover:bg-slate-900/30 text-slate-600 dark:text-slate-400',
     image: 'hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    link: 'hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400',
 };
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -52,6 +54,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const [showImageModal, setShowImageModal] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [imageAlt, setImageAlt] = useState("");
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [linkUrl, setLinkUrl] = useState("");
+    const [selectedText, setSelectedText] = useState("");
     const savedRangeRef = useRef<Range | null>(null);
 
     useEffect(() => {
@@ -361,6 +366,48 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         executeCommand('removeFormat');
     };
 
+    const insertLink = () => {
+        if (!linkUrl.trim() || !editorRef.current) return;
+
+        editorRef.current.focus();
+
+        let range: Range;
+        const selection = window.getSelection();
+
+        if (savedRangeRef.current) {
+            range = savedRangeRef.current;
+            if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        } else if (selection && selection.rangeCount > 0) {
+            range = selection.getRangeAt(0);
+        } else {
+            return;
+        }
+
+        const selectedContent = range.extractContents();
+        const link = document.createElement('a');
+        link.href = linkUrl;
+        link.style.cssText = 'color: #0ea5e9; text-decoration: underline; cursor: pointer;';
+        link.appendChild(selectedContent.cloneNode(true));
+
+        range.insertNode(link);
+        range.setStartAfter(link);
+        range.collapse(true);
+
+        if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        savedRangeRef.current = null;
+        setLinkUrl("");
+        setSelectedText("");
+        setShowLinkModal(false);
+        handleInput();
+    };
+
     const ToolbarButton: React.FC<{
         onClick: () => void;
         icon: React.ReactNode;
@@ -518,6 +565,24 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     title="Insert Image"
                     colorClass={TOOLBAR_BUTTON_COLORS.image}
                 />
+
+                <ToolbarButton
+                    onClick={() => {
+                        const selection = window.getSelection();
+                        if (selection && selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0);
+                            const text = range.toString();
+                            if (text) {
+                                setSelectedText(text);
+                                savedRangeRef.current = range.cloneRange();
+                                setShowLinkModal(true);
+                            }
+                        }
+                    }}
+                    icon={<LinkIcon className="w-4 h-4" />}
+                    title="Insert Link"
+                    colorClass={TOOLBAR_BUTTON_COLORS.link}
+                />
             </div>
 
             <div
@@ -588,6 +653,60 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 </div>
             )}
 
+            {showLinkModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                            Insert Link
+                        </h3>
+                        <div className="space-y-4">
+                            {selectedText && (
+                                <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Text to link:</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {selectedText}
+                                    </p>
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    URL
+                                </label>
+                                <input
+                                    type="url"
+                                    value={linkUrl}
+                                    onChange={(e) => setLinkUrl(e.target.value)}
+                                    placeholder="https://example.com"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-gray-700 dark:text-white"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex space-x-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowLinkModal(false);
+                                        setLinkUrl("");
+                                        setSelectedText("");
+                                    }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={insertLink}
+                                    disabled={!linkUrl.trim()}
+                                    className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Insert
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 [contenteditable]:empty:before {
                     content: attr(data-placeholder);
@@ -620,6 +739,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
                 [contenteditable] input[type="checkbox"] {
                     cursor: pointer;
+                }
+                [contenteditable] a {
+                    color: #0ea5e9;
+                    text-decoration: underline;
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+                [contenteditable] a:hover {
+                    color: #06b6d4;
+                }
+                .dark [contenteditable] a {
+                    color: #06b6d4;
+                }
+                .dark [contenteditable] a:hover {
+                    color: #0ea5e9;
                 }
                 [contenteditable] img {
                     display: block;
