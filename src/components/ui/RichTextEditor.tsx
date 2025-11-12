@@ -91,6 +91,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         handleInput();
     }, [handleInput]);
 
+    const handleImageDelete = useCallback((e: Event) => {
+        const button = e.target as HTMLElement;
+        const imageId = button.closest('[data-delete-image-id]')?.getAttribute('data-delete-image-id');
+        if (!imageId || !editorRef.current) return;
+
+        const wrapper = editorRef.current.querySelector(`.image-wrapper[data-image-id="${imageId}"]`);
+        if (wrapper) {
+            wrapper.remove();
+            handleInput();
+        }
+    }, [handleInput]);
+
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
@@ -109,12 +121,56 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 slider.removeEventListener('input', handleImageResize);
                 slider.addEventListener('input', handleImageResize);
             });
+
+            // Re-attach event listeners to delete buttons
+            const deleteButtons = editorRef.current.querySelectorAll('.image-delete-button');
+            deleteButtons.forEach(button => {
+                button.removeEventListener('click', handleImageDelete);
+                button.addEventListener('click', handleImageDelete);
+            });
         }
-    }, [value, checkboxStates, handleImageResize]);
+    }, [value, checkboxStates, handleImageResize, handleImageDelete]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         const selection = window.getSelection();
         if (!selection || !editorRef.current) return;
+
+        if (e.key === "Backspace" || e.key === "Delete") {
+            const range = selection.getRangeAt(0);
+            const selectedContent = range.cloneContents();
+            const imageWrapper = selectedContent.querySelector('.image-wrapper');
+
+            if (imageWrapper) {
+                e.preventDefault();
+                return;
+            }
+
+            if (range.collapsed) {
+                const node = range.startContainer;
+                const parent = node.parentElement;
+
+                if (parent?.classList?.contains('image-wrapper')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (e.key === "Backspace" && node.previousSibling) {
+                    const prevSibling = node.previousSibling;
+                    if (prevSibling.nodeType === Node.ELEMENT_NODE && (prevSibling as HTMLElement).classList?.contains('image-wrapper')) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+
+                if (e.key === "Delete" && node.nextSibling) {
+                    const nextSibling = node.nextSibling;
+                    if (nextSibling.nodeType === Node.ELEMENT_NODE && (nextSibling as HTMLElement).classList?.contains('image-wrapper')) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+        }
 
         if (e.key === "Enter") {
             const range = selection.getRangeAt(0);
@@ -216,29 +272,33 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const wrapper = document.createElement('div');
         wrapper.className = 'image-wrapper';
         wrapper.setAttribute('data-image-id', imageId);
-        wrapper.style.cssText = 'margin: 0.5rem 0;';
+        wrapper.setAttribute('contenteditable', 'false');
+        wrapper.style.cssText = 'margin: 0.5rem 0; user-select: none;';
 
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
+        imageContainer.setAttribute('contenteditable', 'false');
         imageContainer.style.cssText = 'margin-bottom: 0.5rem;';
 
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = imageAlt || 'Image';
         img.setAttribute('data-image-id', imageId);
+        img.setAttribute('contenteditable', 'false');
         img.className = 'editor-image';
-        img.style.cssText = 'max-width: 100%; height: auto; display: block; border-radius: 0.375rem; max-height: 400px; object-fit: contain; width: 100%;';
+        img.style.cssText = 'max-width: 100%; height: auto; display: block; border-radius: 0.375rem; max-height: 400px; object-fit: contain; width: 100%; pointer-events: none;';
 
         imageContainer.appendChild(img);
         wrapper.appendChild(imageContainer);
 
         const sizeControl = document.createElement('div');
         sizeControl.className = 'image-size-control';
-        sizeControl.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; max-width: 300px; margin-top: 0.25rem;';
+        sizeControl.setAttribute('contenteditable', 'false');
+        sizeControl.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; max-width: 300px; margin-top: 0.25rem; position: relative;';
 
         const label = document.createElement('span');
         label.textContent = 'Size:';
-        label.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 30px;';
+        label.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 30px; user-select: none;';
 
         const slider = document.createElement('input');
         slider.type = 'range';
@@ -253,11 +313,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         sizeLabel.className = 'image-size-label';
         sizeLabel.setAttribute('data-image-id', imageId);
         sizeLabel.textContent = '100%';
-        sizeLabel.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 30px; text-align: right;';
+        sizeLabel.style.cssText = 'font-size: 0.75rem; color: #6b7280; min-width: 35px; text-align: right; user-select: none; pointer-events: none;';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'image-delete-button';
+        deleteButton.setAttribute('data-delete-image-id', imageId);
+        deleteButton.setAttribute('type', 'button');
+        deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        deleteButton.style.cssText = 'padding: 0.25rem; background: #ef4444; color: white; border: none; border-radius: 0.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;';
+        deleteButton.onmouseover = () => deleteButton.style.background = '#dc2626';
+        deleteButton.onmouseout = () => deleteButton.style.background = '#ef4444';
 
         sizeControl.appendChild(label);
         sizeControl.appendChild(slider);
         sizeControl.appendChild(sizeLabel);
+        sizeControl.appendChild(deleteButton);
         wrapper.appendChild(sizeControl);
 
         const nextLine = document.createElement('div');
@@ -277,6 +347,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
 
         slider.addEventListener('input', handleImageResize);
+        deleteButton.addEventListener('click', handleImageDelete);
 
         savedRangeRef.current = null;
 
@@ -559,6 +630,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
                 [contenteditable] .image-wrapper {
                     margin: 0.5rem 0;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
+                }
+                [contenteditable] .image-wrapper * {
+                    user-select: none;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
                 }
                 [contenteditable] .image-container {
                     margin-bottom: 0.5rem;
@@ -572,6 +653,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     border-radius: 0.375rem;
                     max-width: 300px;
                     margin-top: 0.25rem;
+                }
+                [contenteditable] .image-size-label {
+                    pointer-events: none;
+                    user-select: none;
+                }
+                [contenteditable] .image-delete-button {
+                    flex-shrink: 0;
+                }
+                [contenteditable] .image-delete-button:hover {
+                    background: #dc2626 !important;
+                }
+                .dark [contenteditable] .image-size-control {
+                    background: #374151;
+                }
+                .dark [contenteditable] .image-size-control span {
+                    color: #9ca3af;
                 }
                 [contenteditable] .image-size-slider {
                     flex: 1;
