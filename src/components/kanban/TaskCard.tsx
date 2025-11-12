@@ -74,6 +74,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       element.removeAttribute('contenteditable');
     });
 
+    // Disable links from being clickable in task cards
+    const links = temp.querySelectorAll("a");
+    links.forEach(link => {
+      link.style.pointerEvents = "none";
+      link.style.cursor = "default";
+    });
+
     return temp.innerHTML;
   };
 
@@ -154,6 +161,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
+          }
+          .task-card-content a {
+            pointer-events: none !important;
+            cursor: default !important;
           }
         `}</style>
 
