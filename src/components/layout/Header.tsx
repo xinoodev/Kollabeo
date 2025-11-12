@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Button } from '../ui/Button';
 import { ThemeSelector } from '../ui/ThemeSelector';
 import { LogOut, Plus, User, Settings } from 'lucide-react';
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToProfile }) => {
   const { user, signOut } = useAuth();
+  const { isDark } = useTheme();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Close profile dropdown when clicking outside
@@ -39,10 +41,14 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
         <div className="flex justify-between items-center h-16">
           {/* Logo - Left side */}
           <div className="flex items-center space-x-4">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">K</span>
-            </div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Kollabeo</h1>
+            <img
+              src={isDark
+                ? "https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-oscuro_l1wg1h.png"
+                : "https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-claro_gtmdzy.png"
+              }
+              alt="Kollabeo Logo"
+              className="h-8 w-18 rounded-lg object-cover"
+            />
           </div>
 
           {/* Actions - Right side */}

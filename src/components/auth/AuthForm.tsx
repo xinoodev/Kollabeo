@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ThemeSelector } from '../ui/ThemeSelector';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
@@ -43,6 +44,7 @@ export const AuthForm: React.FC = () => {
   const [error, setError] = useState('');
 
   const { signIn, signUp } = useAuth();
+  const { isDark } = useTheme();
 
   if (showVerificationScreen) {
     return (
@@ -97,10 +99,14 @@ export const AuthForm: React.FC = () => {
         </div>
         
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-            <LogIn className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Kollabeo</h2>
+          <img
+            src={isDark
+              ? "https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-oscuro_l1wg1h.png"
+              : "https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-claro_gtmdzy.png"
+            }
+            alt="Kollabeo Logo"
+            className="mx-auto h-12 w-48 rounded-lg object-cover mb-4"
+          />
           <p className="mt-2 text-gray-600 dark:text-gray-300">
             {isLogin ? 'Sign in to your account' : 'Create your account'}
           </p>
