@@ -95,6 +95,13 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
         checkbox.removeEventListener('change', updateCheckboxStates);
         checkbox.addEventListener('change', updateCheckboxStates);
       });
+
+      // Make links open in new tab
+      const links = descriptionRef.current.querySelectorAll('a');
+      links.forEach(link => {
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+      });
     }, 50);
 
     return () => {
@@ -381,6 +388,14 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             }
             .dark .task-description-scroll::-webkit-scrollbar-thumb:hover {
               background: rgba(255, 255, 255, 0.3);
+            }
+            .task-card-content a {
+              pointer-events: auto !important;
+              cursor: pointer !important;
+              transition: opacity 0.2s !important;
+            }
+            .task-card-content a:hover {
+              opacity: 0.8 !important;
             }
           `}</style>
 
