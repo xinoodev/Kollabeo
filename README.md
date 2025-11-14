@@ -1,5 +1,16 @@
-<div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px; border-radius: 12px; text-align: center;">
-  <img src="https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-oscuro_l1wg1h.png" alt="Logo" style="max-width: 200px; display: block; margin: 0 auto;">
+<div style="
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  padding: 40px 0;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+  display: block;
+">
+  <img 
+    src="https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-oscuro_l1wg1h.png" 
+    alt="Kollabeo Logo"
+    style="max-width: 140px; display: block; margin: 0 auto;"
+  >
 </div>
 
 # Kollabeo - PERN Stack Task Management Platform
