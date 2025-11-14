@@ -71,6 +71,8 @@ const getTransporter = async () => {
     return transporter;
 };
 
+const LOGO_URL = process.env.LOGO_URL;
+
 // Email template
 export const emailTemplate = {
     verification: (verificationUrl, userName) => ({
@@ -78,7 +80,7 @@ export const emailTemplate = {
         html: `
             <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
                 <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <img src="${LOGO_URL}" alt="Kollabeo Logo" style="height: 56px; width: 14rem; border-radius: 8px; object-fit: cover;">
                     <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
                 </div>
 
@@ -120,7 +122,7 @@ export const emailTemplate = {
         html: `
             <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
                 <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <img src="${LOGO_URL}" alt="Kollabeo Logo" style="height: 56px; width: 14rem; border-radius: 8px; object-fit: cover;">
                     <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
                 </div>
 
@@ -171,7 +173,7 @@ export const emailTemplate = {
         html: `
             <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
                 <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <img src="${LOGO_URL}" alt="Kollabeo Logo" style="height: 56px; width: 14rem; border-radius: 8px; object-fit: cover;">
                     <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
                 </div>
 
@@ -216,7 +218,7 @@ export const emailTemplate = {
         html: `
             <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
                 <div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Kollabeo</h1>
+                    <img src="${LOGO_URL}" alt="Kollabeo Logo" style="height: 56px; width: 14rem; border-radius: 8px; object-fit: cover;">
                     <p style="color: #E0E7FF; margin: 10px 0 0 0;">Collaborative Task Management</p>
                 </div>
 
