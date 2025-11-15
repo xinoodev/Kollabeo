@@ -67,7 +67,6 @@ router.put('/:id', authenticateToken, [
     }
 
     const { id } = req.params;
-    // Agregar checkbox_states a la desestructuración
     const { title, description, priority, due_date, assignee_id, tags, column_id, checkbox_states } = req.body;
 
     const taskCheck = await pool.query(
@@ -146,7 +145,6 @@ router.put('/:id', authenticateToken, [
       values
     );
 
-    // Actualizar user_id en logs de auditoría generados por triggers
     await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
     res.json(result.rows[0]);
