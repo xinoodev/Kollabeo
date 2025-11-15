@@ -1,3 +1,4 @@
+import { AuditLog, AuditLogFilters, AuditLogStats, AuditLogResponse } from '../types';
 const API_BASE_URL = 'http://localhost:5000/api';
 
 class ApiClient {
@@ -373,6 +374,59 @@ class ApiClient {
     return this.request(`/invitation-links/project/${projectId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Audit methods
+  async getAuditLogs(projectId: number, filters: AuditLogFilters = {}): Promise<AuditLogResponse> {
+    const params = new URLSearchParams();
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.action) params.append('action', filters.action);
+    if (filters.entityType) params.append('entityType', filters.entityType);
+    if (filters.userId) params.append('userId', filters.userId.toString());
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/audit/project/${projectId}${query}`);
+  }
+
+  async getAuditStats(projectId: number, startDate?: string, endDate?: string): Promise<AuditLogStats> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/audit/project/${projectId}/stats${query}`);
+  }
+
+  async getAuditActions(): Promise<{ all: string[]; categorized: Record<string, string[]> }> {
+    return this.request('/audit/actions');
+  }
+
+  async getAuditLog(logId: number): Promise<AuditLog> {
+    return this.request(`/audit/log/${logId}`);
+  }
+
+  async exportAuditLogs(projectId: number, filters: AuditLogFilters = {}): Promise<Blob> {
+    const params = new URLSearchParams();
+    if (filters.action) params.append('action', filters.action);
+    if (filters.entityType) params.append('entityType', filters.entityType);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${API_BASE_URL}/audit/project/${projectId}/export${query}`, {
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export audit logs');
+    }
+
+    return response.blob();
   }
 }
 

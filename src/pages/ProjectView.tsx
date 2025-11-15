@@ -9,6 +9,7 @@ import { CreateColumnModal } from '../components/columns/CreateColumnModal';
 import { EditColumnModal } from '../components/columns/EditColumnModal';
 import { MembersModal } from '../components/members/MembersModal';
 import { ProjectSettingsModal } from '../components/projects/ProjectSettingsModal';
+import { AuditLogModal } from '../components/audit/AuditLogModal';
 import { ArrowLeft, Users, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../lib/api';
@@ -28,6 +29,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isAuditLogModalOpen, setIsAuditLogModalOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number>(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<TaskColumn | null>(null);
@@ -120,6 +122,10 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleOpenAudit = () => {
+    setIsAuditLogModalOpen(true);
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -155,6 +161,14 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                 >
                   <Users className="h-4 w-4" />
                   <span>Members</span>
+                </button>
+                <button
+                  onClick={handleOpenAudit}
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                  title="Ver auditoría del proyecto"
+                >
+                  <span className="text-lg">📋</span>
+                  <span>Audit Log</span>
                 </button>
                 {isOwner && (
                   <button
@@ -232,6 +246,12 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
           setProject(updatedProject);
         }}
         onDelete={onBack}
+      />
+
+      <AuditLogModal
+        isOpen={isAuditLogModalOpen}
+        onClose={() => setIsAuditLogModalOpen(false)}
+        project={project}
       />
     </>
   );

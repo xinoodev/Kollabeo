@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { Dashboard } from './pages/Dashboard';
 import { Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
 
 type View = 'dashboard' | 'project' | 'profile' | 'invitation';
 
@@ -123,7 +124,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppContent />
+        <Router>
+          <AppContent />
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );
