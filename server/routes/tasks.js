@@ -67,7 +67,8 @@ router.put('/:id', authenticateToken, [
     }
 
     const { id } = req.params;
-    const { title, description, priority, due_date, assignee_id, tags, column_id } = req.body;
+    // Agregar checkbox_states a la desestructuración
+    const { title, description, priority, due_date, assignee_id, tags, column_id, checkbox_states } = req.body;
 
     const taskCheck = await pool.query(
       'SELECT project_id FROM tasks WHERE id = $1',
@@ -133,6 +134,10 @@ router.put('/:id', authenticateToken, [
       values.push(column_id);
     }
 
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
     updates.push(`updated_at = NOW()`);
     values.push(id);
 
@@ -141,6 +146,7 @@ router.put('/:id', authenticateToken, [
       values
     );
 
+    // Actualizar user_id en logs de auditoría generados por triggers
     await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
     res.json(result.rows[0]);
