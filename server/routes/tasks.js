@@ -1,48 +1,21 @@
 
 import express from 'express';
-import { body, validationResult } from 'express-validator';
-import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { body, validationResult } from 'express-validator';
 import { checkProjectAccess } from '../middleware/permissions.js';
+import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
+import pool from '../config/database.js';
 
 const router = express.Router();
 
-// Get all tasks for a project
-router.get('/project/:projectId', authenticateToken, async (req, res) => {
-  try {
-    const { projectId } = req.params;
+// Aplicar middleware de auditoría
+router.use(auditMiddleware);
 
-    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const result = await pool.query(
-      `SELECT
-        t.*,
-        COALESCE(u.username, u.full_name) as assignee_name,
-        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
-      FROM tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
-      LEFT JOIN task_comments tc ON t.id = tc.task_id
-      WHERE t.project_id = $1
-      GROUP BY t.id, u.username, u.full_name
-      ORDER BY t.position`,
-      [projectId]
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get tasks error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Create a new task
+// Crear tarea
 router.post('/', authenticateToken, [
-  body('title').trim().isLength({ min: 1 }),
-  body('column_id').isInt(),
   body('project_id').isInt(),
+  body('column_id').isInt(),
+  body('title').trim().isLength({ min: 1 }),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent'])
 ], async (req, res) => {
   try {
@@ -51,53 +24,45 @@ router.post('/', authenticateToken, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, column_id, project_id, priority, due_date, assignee_id, tags } = req.body;
+    const { project_id, column_id, title, description, priority, due_date, assignee_id, tags } = req.body;
 
-    const { hasAccess } = await checkProjectAccess(req.user.id, project_id, 'member');
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id);
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const positionResult = await pool.query(
-      'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM tasks WHERE column_id = $1',
-      [column_id]
+    const columnCheck = await pool.query(
+      'SELECT id FROM task_columns WHERE id = $1 AND project_id = $2',
+      [column_id, project_id]
     );
-    const position = positionResult.rows[0].next_position;
+
+    if (columnCheck.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid column for this project' });
+    }
 
     const result = await pool.query(
-      `INSERT INTO tasks (title, description, column_id, project_id, position, priority, due_date, assignee_id, tags)
+      `INSERT INTO tasks (project_id, column_id, title, description, priority, due_date, assignee_id, tags, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [title, description || null, column_id, project_id, position, priority, due_date || null, assignee_id || null, tags || []]
+      [project_id, column_id, title, description, priority, due_date, assignee_id, tags, req.user.id]
     );
 
-    // Get the task with comments count
-    const taskWithCount = await pool.query(
-      `SELECT
-        t.*,
-        COALESCE(u.username, u.full_name) as assignee_name,
-        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
-      FROM tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
-      LEFT JOIN task_comments tc ON t.id = tc.task_id
-      WHERE t.id = $1
-      GROUP BY t.id, u.username, u.full_name`,
-      [result.rows[0].id]
-    );
+    const task = result.rows[0];
 
-    res.status(201).json(taskWithCount.rows[0]);
+    // Actualizar el user_id en el log de auditoría creado por el trigger
+    await updateRecentAuditUser(project_id, req.user.id, 'task', task.id);
+
+    res.status(201).json(task);
   } catch (error) {
     console.error('Create task error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Update task
-
+// Actualizar tarea
 router.put('/:id', authenticateToken, [
   body('title').optional().trim().isLength({ min: 1 }),
-  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']),
-  body('column_id').optional().isInt() // Add validation for column_id
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -106,16 +71,33 @@ router.put('/:id', authenticateToken, [
     }
 
     const { id } = req.params;
-    const { title, description, priority, due_date, assignee_id, tags, checkbox_states, column_id } = req.body;
+    const { title, description, priority, due_date, assignee_id, tags, column_id } = req.body;
 
-    const taskResult = await pool.query('SELECT project_id FROM tasks WHERE id = $1', [id]);
-    if (taskResult.rows.length === 0) {
+    const taskCheck = await pool.query(
+      'SELECT project_id FROM tasks WHERE id = $1',
+      [id]
+    );
+
+    if (taskCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    const { hasAccess } = await checkProjectAccess(req.user.id, taskResult.rows[0].project_id, 'member');
+    const projectId = taskCheck.rows[0].project_id;
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (column_id) {
+      const columnCheck = await pool.query(
+        'SELECT id FROM task_columns WHERE id = $1 AND project_id = $2',
+        [column_id, projectId]
+      );
+
+      if (columnCheck.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid column for this project' });
+      }
     }
 
     const updates = [];
@@ -155,31 +137,16 @@ router.put('/:id', authenticateToken, [
       values.push(column_id);
     }
 
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    updates.push(`updated_at = NOW()`);
     values.push(id);
 
-    await pool.query(
-      `UPDATE tasks SET ${updates.join(', ')} WHERE id = $${paramCount}`,
+    const result = await pool.query(
+      `UPDATE tasks SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
     );
 
-    // Get the updated task with comments count
-    const result = await pool.query(
-      `SELECT
-        t.*,
-        COALESCE(u.username, u.full_name) as assignee_name,
-        COALESCE(COUNT(DISTINCT tc.id), 0)::integer as comments_count
-      FROM tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
-      LEFT JOIN task_comments tc ON t.id = tc.task_id
-      WHERE t.id = $1
-      GROUP BY t.id, u.username, u.full_name`,
-      [id]
-    );
+    // Actualizar user_id en logs de auditoría generados por triggers
+    await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -188,41 +155,68 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// Delete task
+// Eliminar tarea
 router.delete('/:id', authenticateToken, async (req, res) => {
-  const client = await pool.connect();
   try {
     const { id } = req.params;
 
-    const taskResult = await client.query('SELECT project_id, column_id, position FROM tasks WHERE id = $1', [id]);
-    if (taskResult.rows.length === 0) {
+    const taskCheck = await pool.query(
+      'SELECT project_id, title FROM tasks WHERE id = $1',
+      [id]
+    );
+
+    if (taskCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    const task = taskResult.rows[0];
-    const { hasAccess } = await checkProjectAccess(req.user.id, task.project_id, 'member');
+    const { project_id, title } = taskCheck.rows[0];
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id);
+    
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    await client.query('BEGIN');
+    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
 
-    await client.query('DELETE FROM task_comments WHERE task_id = $1', [id]);
-    await client.query('DELETE FROM tasks WHERE id = $1', [id]);
-    await client.query(
-      'UPDATE tasks SET position = position - 1 WHERE column_id = $1 AND position > $2',
-      [task.column_id, task.position]
-    );
-
-    await client.query('COMMIT');
+    // Actualizar user_id en el log de auditoría del trigger
+    await updateRecentAuditUser(project_id, req.user.id, 'task', id);
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Delete task error:', error);
     res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    client.release();
+  }
+});
+
+// Obtener tareas de un proyecto
+router.get('/project/:projectId', authenticateToken, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await pool.query(
+      `SELECT 
+        t.*,
+        u.full_name as assignee_name,
+        u.email as assignee_email,
+        creator.full_name as creator_name,
+        creator.email as creator_email
+       FROM tasks t
+       LEFT JOIN users u ON t.assignee_id = u.id
+       LEFT JOIN users creator ON t.created_by = creator.id
+       WHERE t.project_id = $1
+       ORDER BY t.position ASC`,
+      [projectId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get tasks error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

@@ -1,38 +1,19 @@
+
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import pool from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.js';
 import { sendProjectInvitationEmail } from '../config/email.js';
 import crypto from 'crypto';
+import { authenticateToken } from '../middleware/auth.js';
+import { checkProjectAccess } from '../middleware/permissions.js';
+import { auditMiddleware } from '../middleware/audit.js';
 
 const router = express.Router();
 
-const checkProjectPermission = async (userId, projectId, requiredRole = null) => {
-  const roleHierarchy = { owner: 3, admin: 2, member: 1 };
+// Aplicar middleware de auditoría
+router.use(auditMiddleware);
 
-  const result = await pool.query(
-    `SELECT pm.role FROM project_members pm
-     WHERE pm.project_id = $1 AND pm.user_id = $2
-     UNION
-     SELECT 'owner' as role FROM projects p
-     WHERE p.id = $1 AND p.owner_id = $2`,
-    [projectId, userId]
-  );
-
-  if (result.rows.length === 0) {
-    return { hasAccess: false, role: null };
-  }
-
-  const userRole = result.rows[0].role;
-
-  if (!requiredRole) {
-    return { hasAccess: true, role: userRole };
-  }
-
-  const hasAccess = roleHierarchy[userRole] >= roleHierarchy[requiredRole];
-  return { hasAccess, role: userRole };
-};
-
+// Enviar invitación
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
   body('email').isEmail(),
@@ -46,7 +27,7 @@ router.post('/', authenticateToken, [
 
     const { project_id, email, role } = req.body;
 
-    const { hasAccess } = await checkProjectPermission(req.user.id, project_id, 'admin');
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id, 'admin');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Only admins and owners can invite members' });
     }
@@ -112,6 +93,8 @@ router.post('/', authenticateToken, [
       [project_id, email, role, token, req.user.id, expiresAt]
     );
 
+    // El trigger ya registró la auditoría con el user_id correcto (invited_by)
+
     const inviterResult = await pool.query(
       'SELECT full_name, username FROM users WHERE id = $1',
       [req.user.id]
@@ -144,210 +127,206 @@ router.post('/', authenticateToken, [
   }
 });
 
-router.post('/accept', [
-  body('token').notEmpty()
-], async (req, res) => {
-  const client = await pool.connect();
-  
+// Aceptar invitación
+router.post('/accept/:token', authenticateToken, async (req, res) => {
   try {
-    await client.query('BEGIN');
-    
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ errors: errors.array() });
-    }
+    const { token } = req.params;
 
-    const { token } = req.body;
-
-    const invitationResult = await client.query(
-      `SELECT * FROM project_invitations
-       WHERE token = $1
-       FOR UPDATE`,
+    const invitationResult = await pool.query(
+      `SELECT * FROM project_invitations 
+       WHERE token = $1 AND status = 'pending' AND expires_at > NOW()`,
       [token]
     );
 
     if (invitationResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ 
-        error: 'Invitation not found',
-        shouldRedirect: true 
-      });
+      return res.status(404).json({ error: 'Invalid or expired invitation' });
     }
 
     const invitation = invitationResult.rows[0];
 
-    if (invitation.status === 'accepted') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ 
-        error: 'This invitation has already been accepted',
-        shouldRedirect: true 
-      });
-    }
-
-    if (invitation.status === 'expired' || new Date() > new Date(invitation.expires_at)) {
-      if (invitation.status !== 'expired') {
-        await client.query(
-          'UPDATE project_invitations SET status = $1 WHERE id = $2',
-          ['expired', invitation.id]
-        );
-      }
-      await client.query('COMMIT');
-      return res.status(400).json({ 
-        error: 'Invitation has expired',
-        shouldRedirect: true 
-      });
-    }
-
-    if (invitation.status !== 'pending') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ 
-        error: 'Invitation is no longer valid',
-        shouldRedirect: true 
-      });
-    }
-
-    const userResult = await client.query(
-      'SELECT id FROM users WHERE email = $1',
-      [invitation.email]
+    const userResult = await pool.query(
+      'SELECT email FROM users WHERE id = $1',
+      [req.user.id]
     );
 
-    if (userResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        error: 'No account found with this email. Please register first.',
-        needsRegistration: true,
-        shouldRedirect: true
-      });
+    if (userResult.rows[0].email !== invitation.email) {
+      return res.status(403).json({ error: 'This invitation is for a different email address' });
     }
 
-    const userId = userResult.rows[0].id;
-
-    const existingMember = await client.query(
+    const existingMember = await pool.query(
       'SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2',
-      [invitation.project_id, userId]
+      [invitation.project_id, req.user.id]
     );
 
     if (existingMember.rows.length > 0) {
-      await client.query(
-        'UPDATE project_invitations SET status = $1, accepted_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['accepted', invitation.id]
+      await pool.query(
+        `UPDATE project_invitations SET status = 'accepted' WHERE id = $1`,
+        [invitation.id]
       );
-      await client.query('COMMIT');
-      
-      const projectResult = await client.query(
-        'SELECT name FROM projects WHERE id = $1',
-        [invitation.project_id]
-      );
-      
-      return res.status(200).json({ 
-        message: 'You are already a member of this project',
-        projectId: invitation.project_id,
-        projectName: projectResult.rows[0].name,
-        alreadyMember: true
-      });
+      return res.status(400).json({ error: 'You are already a member of this project' });
     }
 
-    await client.query(
-      'UPDATE project_invitations SET status = $1, accepted_at = CURRENT_TIMESTAMP WHERE id = $2',
-      ['accepted', invitation.id]
-    );
+    await pool.query('BEGIN');
 
-    await client.query(
-      `INSERT INTO project_members (project_id, user_id, role)
-       VALUES ($1, $2, $3)`,
-      [invitation.project_id, userId, invitation.role]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO project_members (project_id, user_id, role)
+         VALUES ($1, $2, $3)`,
+        [invitation.project_id, req.user.id, invitation.role]
+      );
 
-    const projectResult = await client.query(
-      'SELECT name FROM projects WHERE id = $1',
-      [invitation.project_id]
-    );
+      await pool.query(
+        `UPDATE project_invitations SET status = 'accepted', updated_at = NOW() WHERE id = $1`,
+        [invitation.id]
+      );
 
-    await client.query('COMMIT');
+      // El trigger de project_invitations ya registró la auditoría
+      // Actualizar el user_id para reflejar quién aceptó
+      await pool.query(
+        `UPDATE audit_logs 
+         SET user_id = $1 
+         WHERE entity_type = 'invitation' 
+           AND entity_id = $2 
+           AND action = 'invitation_accepted'
+           AND created_at > NOW() - INTERVAL '5 seconds'`,
+        [req.user.id, invitation.id]
+      );
 
-    res.json({
-      message: 'Invitation accepted successfully',
-      projectId: invitation.project_id,
-      projectName: projectResult.rows[0].name,
-      success: true
-    });
+      await pool.query('COMMIT');
+
+      res.json({ message: 'Invitation accepted successfully' });
+    } catch (error) {
+      await pool.query('ROLLBACK');
+      throw error;
+    }
 
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Accept invitation error:', error);
-    
-    if (error.code === '23505') {
-      return res.status(400).json({ 
-        error: 'This invitation has already been processed. Please refresh and try again.',
-        shouldRedirect: true
-      });
-    }
-    
-    res.status(500).json({ 
-      error: 'Internal server error',
-      shouldRedirect: true 
-    });
-  } finally {
-    client.release();
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Rechazar invitación
+router.post('/reject/:token', authenticateToken, async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const invitationResult = await pool.query(
+      `SELECT * FROM project_invitations 
+       WHERE token = $1 AND status = 'pending'`,
+      [token]
+    );
+
+    if (invitationResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Invalid invitation' });
+    }
+
+    const invitation = invitationResult.rows[0];
+
+    const userResult = await pool.query(
+      'SELECT email FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows[0].email !== invitation.email) {
+      return res.status(403).json({ error: 'This invitation is for a different email address' });
+    }
+
+    await pool.query(
+      `UPDATE project_invitations SET status = 'rejected', updated_at = NOW() WHERE id = $1`,
+      [invitation.id]
+    );
+
+    // Actualizar el user_id en el log de auditoría
+    await pool.query(
+      `UPDATE audit_logs 
+       SET user_id = $1 
+       WHERE entity_type = 'invitation' 
+         AND entity_id = $2 
+         AND action = 'invitation_rejected'
+         AND created_at > NOW() - INTERVAL '5 seconds'`,
+      [req.user.id, invitation.id]
+    );
+
+    res.json({ message: 'Invitation rejected successfully' });
+  } catch (error) {
+    console.error('Reject invitation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Obtener invitaciones pendientes de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    const { hasAccess } = await checkProjectPermission(req.user.id, projectId, 'admin');
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'Only admins and owners can view invitations' });
     }
 
     const result = await pool.query(
-      `SELECT
+      `SELECT 
         pi.*,
         u.full_name as inviter_name,
-        u.username as inviter_username
+        u.username as inviter_username,
+        u.avatar_url as inviter_avatar
        FROM project_invitations pi
-       JOIN users u ON pi.invited_by = u.id
-       WHERE pi.project_id = $1 AND pi.status = 'pending'
+       LEFT JOIN users u ON pi.invited_by = u.id
+       WHERE pi.project_id = $1
        ORDER BY pi.created_at DESC`,
       [projectId]
     );
 
     res.json(result.rows);
-
   } catch (error) {
     console.error('Get invitations error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Cancelar invitación
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const invitationResult = await pool.query(
-      'SELECT project_id FROM project_invitations WHERE id = $1',
+    const invitationCheck = await pool.query(
+      'SELECT project_id, status FROM project_invitations WHERE id = $1',
       [id]
     );
 
-    if (invitationResult.rows.length === 0) {
+    if (invitationCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Invitation not found' });
     }
 
-    const { project_id } = invitationResult.rows[0];
+    const { project_id, status } = invitationCheck.rows[0];
 
-    const { hasAccess } = await checkProjectPermission(req.user.id, project_id, 'admin');
+    const { hasAccess } = await checkProjectAccess(req.user.id, project_id, 'admin');
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'Only admins and owners can cancel invitations' });
     }
 
-    await pool.query('DELETE FROM project_invitations WHERE id = $1', [id]);
+    if (status !== 'pending') {
+      return res.status(400).json({ error: 'Can only cancel pending invitations' });
+    }
+
+    await pool.query(
+      `UPDATE project_invitations SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+      [id]
+    );
+
+    // Registrar auditoría manual para cancelación
+    await req.logAudit(
+      project_id,
+      'invitation_cancelled',
+      'invitation',
+      id,
+      { cancelled_by: req.user.id }
+    );
 
     res.json({ message: 'Invitation cancelled successfully' });
-
   } catch (error) {
-    console.error('Delete invitation error:', error);
+    console.error('Cancel invitation error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
