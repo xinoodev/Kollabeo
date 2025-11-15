@@ -21,15 +21,12 @@ export const AuditPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Auditoría del Proyecto</h1>
           <p className="mt-2 text-gray-600">
             Visualiza y analiza todas las acciones realizadas en el proyecto
           </p>
         </div>
-
-        {/* Tabs */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
@@ -53,8 +50,6 @@ export const AuditPage: React.FC = () => {
             </nav>
           </div>
         </div>
-
-        {/* Content */}
         <div>
           {activeTab === 'logs' && <AuditLogViewer projectId={parseInt(projectId)} />}
           {activeTab === 'stats' && <AuditStats projectId={parseInt(projectId)} />}

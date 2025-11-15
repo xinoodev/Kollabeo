@@ -8,10 +8,8 @@ import pool from '../config/database.js';
 
 const router = express.Router();
 
-// Aplicar middleware de auditoría
 router.use(auditMiddleware);
 
-// Crear tarea
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
   body('column_id').isInt(),
@@ -49,7 +47,6 @@ router.post('/', authenticateToken, [
 
     const task = result.rows[0];
 
-    // Actualizar el user_id en el log de auditoría creado por el trigger
     await updateRecentAuditUser(project_id, req.user.id, 'task', task.id);
 
     res.status(201).json(task);
@@ -59,7 +56,6 @@ router.post('/', authenticateToken, [
   }
 });
 
-// Actualizar tarea
 router.put('/:id', authenticateToken, [
   body('title').optional().trim().isLength({ min: 1 }),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent'])
@@ -145,7 +141,6 @@ router.put('/:id', authenticateToken, [
       values
     );
 
-    // Actualizar user_id en logs de auditoría generados por triggers
     await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
     res.json(result.rows[0]);
@@ -155,7 +150,6 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// Eliminar tarea
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -178,7 +172,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
 
-    // Actualizar user_id en el log de auditoría del trigger
     await updateRecentAuditUser(project_id, req.user.id, 'task', id);
 
     res.json({ message: 'Task deleted successfully' });
@@ -188,7 +181,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener tareas de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;

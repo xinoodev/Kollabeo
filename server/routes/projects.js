@@ -6,7 +6,6 @@ import { checkProjectAccess } from '../middleware/permissions.js';
 
 const router = express.Router();
 
-// Get all projects for the authenticated user
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -35,7 +34,6 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a new project
 router.post('/', authenticateToken, [
   body('name').trim().isLength({ min: 1 }),
   body('color').optional().isHexColor()
@@ -60,7 +58,6 @@ router.post('/', authenticateToken, [
   }
 });
 
-// Get project by ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,7 +92,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Update project
 router.put('/:id', authenticateToken, [
   body('name').optional().trim().isLength({ min: 1 }),
   body('color').optional().isHexColor()
@@ -130,7 +126,6 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// Delete project
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -151,12 +146,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Get member project role
 router.get('/:id/role', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if user is owner
     const ownerCheck = await pool.query(
       'SELECT id FROM projects WHERE id = $1 AND owner_id = $2',
       [id, req.user.id]
@@ -166,7 +159,6 @@ router.get('/:id/role', authenticateToken, async (req, res) => {
       return res.json({ role: 'owner', isOwner: true });
     }
 
-    // Check if user is a member
     const memberCheck = await pool.query(
       'SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2',
       [id, req.user.id]

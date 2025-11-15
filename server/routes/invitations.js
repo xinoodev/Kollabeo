@@ -10,10 +10,8 @@ import { auditMiddleware } from '../middleware/audit.js';
 
 const router = express.Router();
 
-// Aplicar middleware de auditoría
 router.use(auditMiddleware);
 
-// Enviar invitación
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
   body('email').isEmail(),
@@ -93,8 +91,6 @@ router.post('/', authenticateToken, [
       [project_id, email, role, token, req.user.id, expiresAt]
     );
 
-    // El trigger ya registró la auditoría con el user_id correcto (invited_by)
-
     const inviterResult = await pool.query(
       'SELECT full_name, username FROM users WHERE id = $1',
       [req.user.id]
@@ -127,7 +123,6 @@ router.post('/', authenticateToken, [
   }
 });
 
-// Aceptar invitación
 router.post('/accept/:token', authenticateToken, async (req, res) => {
   try {
     const { token } = req.params;
@@ -180,8 +175,6 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
         [invitation.id]
       );
 
-      // El trigger de project_invitations ya registró la auditoría
-      // Actualizar el user_id para reflejar quién aceptó
       await pool.query(
         `UPDATE audit_logs 
          SET user_id = $1 
@@ -206,7 +199,6 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
   }
 });
 
-// Rechazar invitación
 router.post('/reject/:token', authenticateToken, async (req, res) => {
   try {
     const { token } = req.params;
@@ -237,7 +229,6 @@ router.post('/reject/:token', authenticateToken, async (req, res) => {
       [invitation.id]
     );
 
-    // Actualizar el user_id en el log de auditoría
     await pool.query(
       `UPDATE audit_logs 
        SET user_id = $1 
@@ -255,7 +246,6 @@ router.post('/reject/:token', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener invitaciones pendientes de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -285,7 +275,6 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
   }
 });
 
-// Cancelar invitación
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -315,7 +304,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       [id]
     );
 
-    // Registrar auditoría manual para cancelación
     await req.logAudit(
       project_id,
       'invitation_cancelled',

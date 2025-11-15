@@ -8,10 +8,8 @@ import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
 
 const router = express.Router();
 
-// Aplicar middleware de auditoría
 router.use(auditMiddleware);
 
-// Crear columna
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
   body('name').trim().isLength({ min: 1 }),
@@ -46,7 +44,6 @@ router.post('/', authenticateToken, [
       [project_id, name, finalPosition]
     );
 
-    // Actualizar user_id en el log de auditoría del trigger
     await updateRecentAuditUser(project_id, req.user.id, 'column', result.rows[0].id);
 
     res.status(201).json(result.rows[0]);
@@ -56,7 +53,6 @@ router.post('/', authenticateToken, [
   }
 });
 
-// Actualizar columna
 router.put('/:id', authenticateToken, [
   body('name').optional().trim().isLength({ min: 1 }),
   body('position').optional().isInt()
@@ -111,7 +107,6 @@ router.put('/:id', authenticateToken, [
       values
     );
 
-    // Actualizar user_id en el log de auditoría del trigger
     await updateRecentAuditUser(projectId, req.user.id, 'column', id);
 
     res.json(result.rows[0]);
@@ -121,7 +116,6 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// Eliminar columna
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,7 +136,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Verificar si hay tareas en la columna
     const tasksCheck = await pool.query(
       'SELECT COUNT(*) as count FROM tasks WHERE column_id = $1',
       [id]
@@ -156,7 +149,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     await pool.query('DELETE FROM task_columns WHERE id = $1', [id]);
 
-    // Actualizar user_id en el log de auditoría del trigger
     await updateRecentAuditUser(project_id, req.user.id, 'column', id);
 
     res.json({ message: 'Column deleted successfully' });
@@ -166,7 +158,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener columnas de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -186,6 +177,62 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Get columns error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.patch('/reorder', authenticateToken, [
+  body('projectId').isInt(),
+  body('columns').isArray(),
+  body('columns.*.id').isInt(),
+  body('columns.*.position').isInt()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { projectId, columns } = req.body;
+
+    const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
+    
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      for (const column of columns) {
+        await client.query(
+          'UPDATE task_columns SET position = $1, updated_at = NOW() WHERE id = $2 AND project_id = $3',
+          [column.position, column.id, projectId]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      const result = await pool.query(
+        'SELECT * FROM task_columns WHERE project_id = $1 ORDER BY position',
+        [projectId]
+      );
+
+      for (const column of columns) {
+        await updateRecentAuditUser(projectId, req.user.id, 'column', column.id);
+      }
+
+      res.json(result.rows);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Reorder columns error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

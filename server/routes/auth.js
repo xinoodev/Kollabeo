@@ -9,12 +9,10 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../config/email.j
 
 const router = express.Router();
 
-// Generate verification token
 const generateVerificationToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Register
 router.post('/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
@@ -28,7 +26,6 @@ router.post('/register', [
 
     const { email, password, fullName } = req.body;
 
-    // Check if user already exists
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
@@ -38,15 +35,11 @@ router.post('/register', [
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Generate verification token
     const verificationToken = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create user
     const result = await pool.query(
       'INSERT INTO users (email, password_hash, full_name, email_verification_token, email_verification_expires) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, email_verified',
       [email, passwordHash, fullName, verificationToken, verificationExpires]
@@ -54,12 +47,10 @@ router.post('/register', [
 
     const user = result.rows[0];
 
-    // Send verification email
     const emailResult = await sendVerificationEmail(email, verificationToken, fullName);
     
     if (!emailResult.success) {
       console.error('Failed to send verification email:', emailResult.error);
-      // Don't fail registration if email fails, just log it
     }
 
     res.status(201).json({
@@ -78,7 +69,6 @@ router.post('/register', [
   }
 });
 
-// Verify email
 router.post('/verify-email', [
   body('token').isLength({ min: 1 })
 ], async (req, res) => {
@@ -90,7 +80,6 @@ router.post('/verify-email', [
 
     const { token } = req.body;
 
-    // Find user with valid token
     const result = await pool.query(
       'SELECT id, email, full_name, email_verified FROM users WHERE email_verification_token = $1 AND email_verification_expires > NOW()',
       [token]
@@ -106,13 +95,11 @@ router.post('/verify-email', [
       return res.status(400).json({ error: 'Email already verified' });
     }
 
-    // Update user as verified and clear token
     await pool.query(
       'UPDATE users SET email_verified = TRUE, email_verification_token = NULL, email_verification_expires = NULL WHERE id = $1',
       [user.id]
     );
 
-    // Generate JWT token
     const jwtToken = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
@@ -136,7 +123,6 @@ router.post('/verify-email', [
   }
 });
 
-// Resend verification email
 router.post('/resend-verification', [
   body('email').isEmail().normalizeEmail()
 ], async (req, res) => {
@@ -148,7 +134,6 @@ router.post('/resend-verification', [
 
     const { email } = req.body;
 
-    // Find unverified user
     const result = await pool.query(
       'SELECT id, email, full_name, email_verified FROM users WHERE email = $1',
       [email]
@@ -164,17 +149,14 @@ router.post('/resend-verification', [
       return res.status(400).json({ error: 'Email already verified' });
     }
 
-    // Generate new verification token
     const verificationToken = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Update user with new token
     await pool.query(
       'UPDATE users SET email_verification_token = $1, email_verification_expires = $2 WHERE id = $3',
       [verificationToken, verificationExpires, user.id]
     );
 
-    // Send verification email
     const emailResult = await sendVerificationEmail(email, verificationToken, user.full_name);
     
     if (!emailResult.success) {
@@ -190,7 +172,6 @@ router.post('/resend-verification', [
   }
 });
 
-// Login
 router.post('/login', [
   body('email').isEmail().normalizeEmail(),
   body('password').exists()
@@ -203,7 +184,6 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Find user
     const result = await pool.query(
       'SELECT id, email, password_hash, full_name, username, avatar_url, email_verified FROM users WHERE email = $1',
       [email]
@@ -215,13 +195,11 @@ router.post('/login', [
 
     const user = result.rows[0];
 
-    // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check if email is verified
     if (!user.email_verified) {
       return res.status(403).json({ 
         error: 'Please verify your email address before logging in',
@@ -230,7 +208,6 @@ router.post('/login', [
       });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
@@ -255,12 +232,10 @@ router.post('/login', [
   }
 });
 
-// Get current user
 router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user });
 });
 
-// Request password reset
 router.post('/request-password-reset', [
   body('email').isEmail().normalizeEmail()
 ], async (req, res) => {
@@ -309,7 +284,6 @@ router.post('/request-password-reset', [
   }
 });
 
-// Reset password
 router.post('/reset-password', [
   body('token').isLength({ min: 1 }),
   body('password').isLength({ min: 6 })

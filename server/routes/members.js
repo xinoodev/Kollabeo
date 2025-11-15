@@ -8,10 +8,8 @@ import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
 
 const router = express.Router();
 
-// Aplicar middleware de auditoría
 router.use(auditMiddleware);
 
-// Añadir miembro
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
   body('email').isEmail(),
@@ -66,7 +64,6 @@ router.post('/', authenticateToken, [
       [project_id, newUser.id, role]
     );
 
-    // Actualizar el user_id en el log de auditoría creado por el trigger
     await updateRecentAuditUser(project_id, req.user.id, 'project_member', result.rows[0].id);
 
     const memberWithUser = await pool.query(
@@ -89,7 +86,6 @@ router.post('/', authenticateToken, [
   }
 });
 
-// Actualizar rol de miembro
 router.put('/:id', authenticateToken, [
   body('role').isIn(['admin', 'member'])
 ], async (req, res) => {
@@ -135,7 +131,6 @@ router.put('/:id', authenticateToken, [
       [role, id]
     );
 
-    // Actualizar user_id en el log de auditoría
     await updateRecentAuditUser(project_id, req.user.id, 'project_member', id);
 
     const memberWithUser = await pool.query(
@@ -158,7 +153,6 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// Eliminar miembro
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -190,7 +184,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     await pool.query('DELETE FROM project_members WHERE id = $1', [id]);
 
-    // Actualizar user_id en el log de auditoría del trigger
     await updateRecentAuditUser(project_id, req.user.id, 'project_member', id);
 
     res.json({ message: 'Member removed successfully' });
@@ -200,7 +193,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener miembros de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;

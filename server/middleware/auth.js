@@ -12,7 +12,6 @@ export const authenticateToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
     const result = await pool.query(
       'SELECT id, email, full_name, username, avatar_url, email_verified FROM users WHERE id = $1',
       [decoded.userId]

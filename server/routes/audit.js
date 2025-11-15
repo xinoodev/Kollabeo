@@ -6,7 +6,6 @@ import { checkProjectAccess } from '../middleware/permissions.js';
 
 const router = express.Router();
 
-// Obtener acciones disponibles para filtrado
 router.get('/actions', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -17,7 +16,6 @@ router.get('/actions', authenticateToken, async (req, res) => {
 
     const actions = result.rows.map(row => row.action);
     
-    // Agrupar acciones por categoría
     const categorizedActions = {
       tasks: actions.filter(a => a.startsWith('task_')),
       members: actions.filter(a => a.startsWith('member_')),
@@ -37,7 +35,6 @@ router.get('/actions', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener logs de auditoría de un proyecto
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -51,13 +48,11 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
       userId 
     } = req.query;
 
-    // Verificar que el usuario es owner o admin
     const { hasAccess, role } = await checkProjectAccess(req.user.id, projectId, 'admin');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Only owners and admins can view audit logs' });
     }
 
-    // Construir query dinámicamente
     let query = `
       SELECT 
         al.*,
@@ -73,7 +68,6 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     const params = [projectId];
     let paramCount = 2;
 
-    // Filtros adicionales
     if (action) {
       query += ` AND al.action = $${paramCount}`;
       params.push(action);
@@ -104,7 +98,6 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
       paramCount++;
     }
 
-    // Obtener total de registros para paginación
     const countQuery = query.replace(
       'SELECT al.*, u.full_name as user_name, u.username, u.email as user_email, u.avatar_url as user_avatar',
       'SELECT COUNT(*) as total'
@@ -112,7 +105,6 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     const countResult = await pool.query(countQuery, params);
     const total = parseInt(countResult.rows[0].total);
 
-    // Añadir ordenamiento y paginación
     query += ` ORDER BY al.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(parseInt(limit), parseInt(offset));
 
@@ -133,13 +125,11 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener estadísticas de auditoría
 router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
     const { startDate, endDate } = req.query;
 
-    // Verificar que el usuario es owner o admin
     const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Only owners and admins can view audit statistics' });
@@ -161,7 +151,6 @@ router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
       paramCount++;
     }
 
-    // Estadísticas por acción
     const actionStats = await pool.query(
       `SELECT action, COUNT(*) as count
        FROM audit_logs
@@ -171,7 +160,6 @@ router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
       params
     );
 
-    // Estadísticas por usuario
     const userStats = await pool.query(
       `SELECT 
         al.user_id,
@@ -188,7 +176,6 @@ router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
       params
     );
 
-    // Estadísticas por tipo de entidad
     const entityStats = await pool.query(
       `SELECT entity_type, COUNT(*) as count
        FROM audit_logs
@@ -198,7 +185,6 @@ router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
       params
     );
 
-    // Actividad por día (últimos 30 días)
     const activityByDay = await pool.query(
       `SELECT 
         DATE(created_at) as date,
@@ -223,7 +209,6 @@ router.get('/project/:projectId/stats', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener detalles de un log específico
 router.get('/log/:logId', authenticateToken, async (req, res) => {
   try {
     const { logId } = req.params;
@@ -247,7 +232,6 @@ router.get('/log/:logId', authenticateToken, async (req, res) => {
 
     const log = result.rows[0];
 
-    // Verificar acceso al proyecto
     const { hasAccess } = await checkProjectAccess(req.user.id, log.project_id, 'admin');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
@@ -260,13 +244,11 @@ router.get('/log/:logId', authenticateToken, async (req, res) => {
   }
 });
 
-// Exportar logs de auditoría (CSV)
 router.get('/project/:projectId/export', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
     const { startDate, endDate, action, entityType } = req.query;
 
-    // Verificar que el usuario es owner o admin
     const { hasAccess } = await checkProjectAccess(req.user.id, projectId, 'admin');
     if (!hasAccess) {
       return res.status(403).json({ error: 'Only owners and admins can export audit logs' });
@@ -319,7 +301,6 @@ router.get('/project/:projectId/export', authenticateToken, async (req, res) => 
 
     const result = await pool.query(query, params);
 
-    // Convertir a CSV
     const headers = ['ID', 'Action', 'Entity Type', 'Entity ID', 'Date', 'User Name', 'Username', 'Email', 'Details'];
     const csvRows = [headers.join(',')];
 
