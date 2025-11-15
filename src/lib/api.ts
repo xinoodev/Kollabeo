@@ -312,7 +312,7 @@ class ApiClient {
 
   // Collaborator methods
   async getCollaborators(taskId: number) {
-    return this.request(`/collaborators/${taskId}`);
+    return this.request(`/collaborators/task/${taskId}`);
   }
 
   async addCollaborator(taskId: number, userId: number) {

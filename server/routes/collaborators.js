@@ -145,7 +145,7 @@ router.get('/task/:taskId', authenticateToken, async (req, res) => {
        FROM task_collaborators tc
        JOIN users u ON tc.user_id = u.id
        WHERE tc.task_id = $1
-       ORDER BY tc.created_at ASC`,
+       ORDER BY tc.id ASC`,
       [taskId]
     );
 

@@ -203,8 +203,11 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT
-        pm.*,
+      `SELECT 
+        pm.id,
+        pm.user_id,
+        pm.role,
+        pm.joined_at,
         u.email,
         u.full_name,
         u.avatar_url,
@@ -212,13 +215,46 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
        FROM project_members pm
        JOIN users u ON pm.user_id = u.id
        WHERE pm.project_id = $1
-       ORDER BY pm.created_at ASC`,
+       ORDER BY pm.joined_at ASC`,
       [projectId]
     );
 
-    res.json(result.rows);
+    const projectResult = await pool.query(
+      `SELECT 
+        p.owner_id,
+        u.email,
+        u.full_name,
+        u.avatar_url,
+        u.username
+       FROM projects p
+       JOIN users u ON p.owner_id = u.id
+       WHERE p.id = $1`,
+      [projectId]
+    );
+
+    const members = result.rows;
+    
+    if (projectResult.rows.length > 0) {
+      const owner = projectResult.rows[0];
+      const ownerExists = members.some(m => m.user_id === owner.owner_id);
+      
+      if (!ownerExists) {
+        members.unshift({
+          id: null,
+          user_id: owner.owner_id,
+          role: 'owner',
+          email: owner.email,
+          full_name: owner.full_name,
+          avatar_url: owner.avatar_url,
+          username: owner.username,
+          joined_at: null
+        });
+      }
+    }
+
+    res.json(members);
   } catch (error) {
-    console.error('Get members error:', error);
+    console.error('Get project members error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
