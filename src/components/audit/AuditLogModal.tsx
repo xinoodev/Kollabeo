@@ -59,7 +59,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({
         </div>
       </div>
 
-      <div className="max-h-[70vh] overflow-y-auto">
+      <div className="max-h-[70vh] overflow-y-auto pr-2 scrollbar-custom">
         {activeTab === 'logs' && <AuditLogViewer projectId={project.id} />}
         {activeTab === 'stats' && <AuditStats projectId={project.id} />}
       </div>
