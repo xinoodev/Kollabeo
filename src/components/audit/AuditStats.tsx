@@ -20,6 +20,7 @@ import { AuditLogStats } from '../../types';
 import { apiClient } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface AuditStatsProps {
   projectId: number;
@@ -45,6 +46,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+  const { isDark } = useTheme();
 
   useEffect(() => {
     loadStats();
@@ -62,6 +64,24 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Estilos dinámicos para tooltips según el tema
+  const tooltipStyles = {
+    contentStyle: {
+      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      border: isDark ? '1px solid #374151' : '1px solid #E5E7EB',
+      borderRadius: '0.5rem',
+      color: isDark ? '#F9FAFB' : '#111827',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    },
+    labelStyle: {
+      color: isDark ? '#F9FAFB' : '#111827',
+      fontWeight: 600,
+    },
+    itemStyle: {
+      color: isDark ? '#F9FAFB' : '#111827',
+    },
   };
 
   if (loading) {
@@ -187,12 +207,9 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
             />
             <YAxis stroke="#6B7280" />
             <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#1F2937', 
-                border: '1px solid #374151',
-                borderRadius: '0.5rem',
-                color: '#F9FAFB'
-              }}
+              contentStyle={tooltipStyles.contentStyle}
+              labelStyle={tooltipStyles.labelStyle}
+              itemStyle={tooltipStyles.itemStyle}
             />
             <Legend />
             <Bar dataKey="count" fill="#3B82F6" name="Count" />
@@ -223,12 +240,9 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
                 ))}
               </Pie>
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: '1px solid #374151',
-                  borderRadius: '0.5rem',
-                  color: '#F9FAFB'
-                }}
+                contentStyle={tooltipStyles.contentStyle}
+                labelStyle={tooltipStyles.labelStyle}
+                itemStyle={tooltipStyles.itemStyle}
                 formatter={(value: number) => [`${value} actions`, 'Count']}
               />
               <Legend 
@@ -249,7 +263,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Most Active Users</h3>
         <div className="space-y-4">
           {topUsers.map((user, index) => (
-                        <div key={user.user_id} className="flex items-center space-x-4">
+            <div key={user.user_id} className="flex items-center space-x-4">
               <div className="flex-shrink-0 w-8 text-center font-bold text-gray-500 dark:text-gray-400">
                 #{index + 1}
               </div>
@@ -301,12 +315,9 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
             <YAxis stroke="#6B7280" />
             <Tooltip 
               labelFormatter={(date) => new Date(date).toLocaleDateString('en-US')}
-              contentStyle={{ 
-                backgroundColor: '#1F2937', 
-                border: '1px solid #374151',
-                borderRadius: '0.5rem',
-                color: '#F9FAFB'
-              }}
+              contentStyle={tooltipStyles.contentStyle}
+              labelStyle={tooltipStyles.labelStyle}
+              itemStyle={tooltipStyles.itemStyle}
             />
             <Legend />
             <Line 
