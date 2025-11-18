@@ -1,6 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { AuditLogStats } from '../../types';
-import { apiClient } from '../../lib/api';
 import {
   BarChart,
   Bar,
@@ -17,6 +16,8 @@ import {
   Line,
 } from 'recharts';
 import { BarChart3, Users, FolderOpen, Calendar, Loader2 } from 'lucide-react';
+import { AuditLogStats } from '../../types';
+import { apiClient } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -24,7 +25,20 @@ interface AuditStatsProps {
   projectId: number;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
+// Función helper para formatear los nombres de entidades
+const formatEntityType = (entityType: string): string => {
+  const labels: Record<string, string> = {
+    'task': 'Tasks',
+    'project_member': 'Members',
+    'invitation': 'Invitations',
+    'task_collaborator': 'Collaborators',
+    'column': 'Columns',
+    'project': 'Projects',
+  };
+  return labels[entityType] || entityType;
+};
 
 export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
   const [stats, setStats] = useState<AuditLogStats | null>(null);
@@ -46,7 +60,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
       setError('Error loading statistics');
       console.error('Load stats error:', err);
     } finally {
-            setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -68,6 +82,13 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
 
   const topActions = stats.byAction.slice(0, 10);
   const topUsers = stats.byUser.slice(0, 10);
+
+  // Preparar los datos para el gráfico de pastel
+  const entityTypeData = stats.byEntityType.map(item => ({
+    name: formatEntityType(item.entity_type),
+    value: parseInt(item.count.toString()),
+    entity_type: item.entity_type,
+  }));
 
   return (
     <div className="space-y-6">
@@ -181,39 +202,54 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribution by Entity Type</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={stats.byEntityType}
-              dataKey="count"
-              nameKey="entity_type"
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-              label={(entry: any) => `${entry.entity_type}: ${entry.count}`}
-            >
-              {stats.byEntityType.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#1F2937', 
-                border: '1px solid #374151',
-                borderRadius: '0.5rem',
-                color: '#F9FAFB'
-              }}
-            />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        {entityTypeData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={entityTypeData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label={({ name, value, percent }) => {
+                  const percentValue = percent !== undefined ? (percent * 100).toFixed(0) : '0';
+                  return `${name}: ${value} (${percentValue}%)`;
+                }}
+                labelLine={true}
+              >
+                {entityTypeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '0.5rem',
+                  color: '#F9FAFB'
+                }}
+                formatter={(value: number) => [`${value} actions`, 'Count']}
+              />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                formatter={(value) => value}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            No data available
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Most Active Users</h3>
         <div className="space-y-4">
           {topUsers.map((user, index) => (
-            <div key={user.user_id} className="flex items-center space-x-4">
+                        <div key={user.user_id} className="flex items-center space-x-4">
               <div className="flex-shrink-0 w-8 text-center font-bold text-gray-500 dark:text-gray-400">
                 #{index + 1}
               </div>
@@ -276,7 +312,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
             <Line 
               type="monotone" 
               dataKey="count" 
-              stroke="#3B82F6"
+              stroke="#3B82F6" 
               strokeWidth={2}
               name="Actions"
               dot={{ fill: '#3B82F6' }}
