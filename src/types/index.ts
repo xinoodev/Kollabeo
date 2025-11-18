@@ -121,6 +121,7 @@ export type AuditAction =
   // Column actions
   | 'column_created'
   | 'column_renamed'
+  | 'column_moved'
   | 'column_deleted'
   // Project actions
   | 'project_created'

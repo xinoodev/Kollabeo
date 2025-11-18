@@ -10,7 +10,7 @@ import { EditColumnModal } from '../components/columns/EditColumnModal';
 import { MembersModal } from '../components/members/MembersModal';
 import { ProjectSettingsModal } from '../components/projects/ProjectSettingsModal';
 import { AuditLogModal } from '../components/audit/AuditLogModal';
-import { ArrowLeft, Users, Settings } from 'lucide-react';
+import { ArrowLeft, Users, Settings, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../lib/api';
 
@@ -167,7 +167,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                   className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
                   title="Ver auditoría del proyecto"
                 >
-                  <span className="text-lg">📋</span>
+                  <FileText className="h-4 w-4" />
                   <span>Audit Log</span>
                 </button>
                 {isOwner && (

@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
+import { FileText, BarChart3 } from 'lucide-react';
 import { AuditLogViewer } from './AuditLogViewer';
 import { AuditStats } from './AuditStats';
 import { Project } from '../../types';
-import { FileText, BarChart3 } from 'lucide-react';
 
 interface AuditLogModalProps {
   isOpen: boolean;
@@ -22,8 +21,8 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('logs');
 
   const tabs: Array<{ id: TabType; label: string; icon: React.ElementType }> = [
-    { id: 'logs', label: 'Registros', icon: FileText },
-    { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
+    { id: 'logs', label: 'Logs', icon: FileText },
+    { id: 'stats', label: 'Statistics', icon: BarChart3 },
   ];
 
   return (
