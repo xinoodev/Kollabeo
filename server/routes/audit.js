@@ -53,7 +53,51 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only owners and admins can view audit logs' });
     }
 
-    let query = `
+    let whereConditions = ['al.project_id = $1'];
+    const params = [projectId];
+    let paramCount = 2;
+
+    if (action) {
+      whereConditions.push(`al.action = $${paramCount}`);
+      params.push(action);
+      paramCount++;
+    }
+
+    if (entityType) {
+      whereConditions.push(`al.entity_type = $${paramCount}`);
+      params.push(entityType);
+      paramCount++;
+    }
+
+    if (userId) {
+      whereConditions.push(`al.user_id = $${paramCount}`);
+      params.push(userId);
+      paramCount++;
+    }
+
+    if (startDate) {
+      whereConditions.push(`al.created_at >= $${paramCount}`);
+      params.push(startDate);
+      paramCount++;
+    }
+
+    if (endDate) {
+      whereConditions.push(`al.created_at <= $${paramCount}`);
+      params.push(endDate);
+      paramCount++;
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM audit_logs al
+      WHERE ${whereClause}
+    `;
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
+
+    const query = `
       SELECT 
         al.*,
         u.full_name as user_name,
@@ -62,53 +106,13 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
         u.avatar_url as user_avatar
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
-      WHERE al.project_id = $1
+      WHERE ${whereClause}
+      ORDER BY al.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
     `;
-
-    const params = [projectId];
-    let paramCount = 2;
-
-    if (action) {
-      query += ` AND al.action = $${paramCount}`;
-      params.push(action);
-      paramCount++;
-    }
-
-    if (entityType) {
-      query += ` AND al.entity_type = $${paramCount}`;
-      params.push(entityType);
-      paramCount++;
-    }
-
-    if (userId) {
-      query += ` AND al.user_id = $${paramCount}`;
-      params.push(userId);
-      paramCount++;
-    }
-
-    if (startDate) {
-      query += ` AND al.created_at >= $${paramCount}`;
-      params.push(startDate);
-      paramCount++;
-    }
-
-    if (endDate) {
-      query += ` AND al.created_at <= $${paramCount}`;
-      params.push(endDate);
-      paramCount++;
-    }
-
-    const countQuery = query.replace(
-      'SELECT al.*, u.full_name as user_name, u.username, u.email as user_email, u.avatar_url as user_avatar',
-      'SELECT COUNT(*) as total'
-    );
-    const countResult = await pool.query(countQuery, params);
-    const total = parseInt(countResult.rows[0].total);
-
-    query += ` ORDER BY al.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    params.push(parseInt(limit), parseInt(offset));
-
-    const result = await pool.query(query, params);
+    
+    const queryParams = [...params, parseInt(limit), parseInt(offset)];
+    const result = await pool.query(query, queryParams);
 
     res.json({
       logs: result.rows,
