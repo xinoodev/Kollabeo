@@ -4,6 +4,21 @@ import { AuditLog, AuditLogFilters, AuditAction, AuditEntityType } from '../../t
 import { apiClient } from '../../lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { 
+  FileText, 
+  Users, 
+  Mail, 
+  UserPlus, 
+  BarChart3, 
+  FolderOpen,
+  Filter,
+  Download,
+  ChevronRight,
+  X,
+  Loader2
+} from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface AuditLogViewerProps {
   projectId: number;
@@ -43,27 +58,27 @@ const entityTypeLabels: Record<AuditEntityType, string> = {
   project: 'Project',
 };
 
-const getActionIcon = (action: AuditAction): string => {
-  if (action.startsWith('task_')) return '📝';
-  if (action.startsWith('member_')) return '👥';
-  if (action.startsWith('invitation_')) return '✉️';
-  if (action.startsWith('collaborator_')) return '🤝';
-  if (action.startsWith('column_')) return '📊';
-  if (action.startsWith('project_')) return '📁';
-  return '📌';
+const getActionIcon = (action: AuditAction) => {
+  if (action.startsWith('task_')) return FileText;
+  if (action.startsWith('member_')) return Users;
+  if (action.startsWith('invitation_')) return Mail;
+  if (action.startsWith('collaborator_')) return UserPlus;
+  if (action.startsWith('column_')) return BarChart3;
+  if (action.startsWith('project_')) return FolderOpen;
+  return FileText;
 };
 
 const getActionColor = (action: AuditAction): string => {
   if (action.includes('created') || action.includes('added') || action.includes('accepted')) {
-    return 'text-green-600 bg-green-50';
+    return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20';
   }
   if (action.includes('deleted') || action.includes('removed') || action.includes('rejected')) {
-    return 'text-red-600 bg-red-50';
+    return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
   }
   if (action.includes('updated') || action.includes('changed') || action.includes('moved')) {
-    return 'text-blue-600 bg-blue-50';
+    return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
   }
-  return 'text-gray-600 bg-gray-50';
+  return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20';
 };
 
 export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => {
@@ -113,7 +128,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      offset: 0, // Reset offset when changing filters
+      offset: 0,
     }));
   };
 
@@ -145,9 +160,9 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
     const details = log.details || {};
     
     return (
-      <div className="mt-2 text-sm text-gray-600">
+      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
         {details.task_title && (
-          <div>Tarea: <span className="font-medium">{details.task_title}</span></div>
+          <div>Tarea: <span className="font-medium text-gray-900 dark:text-white">{details.task_title}</span></div>
         )}
         {details.old_assignee_id !== undefined && details.new_assignee_id !== undefined && (
           <div>
@@ -157,17 +172,17 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
         {details.old_priority && details.new_priority && (
           <div>
             Prioridad: <span className="line-through">{details.old_priority}</span> → 
-            <span className="font-medium ml-1">{details.new_priority}</span>
+            <span className="font-medium ml-1 text-gray-900 dark:text-white">{details.new_priority}</span>
           </div>
         )}
         {details.old_column_id && details.new_column_id && (
           <div>Columna cambiada</div>
         )}
         {details.role && (
-          <div>Rol: <span className="font-medium">{details.role}</span></div>
+          <div>Rol: <span className="font-medium text-gray-900 dark:text-white">{details.role}</span></div>
         )}
         {details.invited_email && (
-          <div>Email: <span className="font-medium">{details.invited_email}</span></div>
+          <div>Email: <span className="font-medium text-gray-900 dark:text-white">{details.invited_email}</span></div>
         )}
       </div>
     );
@@ -176,7 +191,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
   if (loading && logs.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400" />
       </div>
     );
   }
@@ -184,17 +199,20 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Filtros</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtros</h3>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Acción
             </label>
             <select
               value={filters.action || ''}
               onChange={(e) => handleFilterChange('action', e.target.value || undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             >
               <option value="">Todas las acciones</option>
               {availableActions.map(action => (
@@ -206,51 +224,50 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Fecha inicio
             </label>
-            <input
+            <Input
               type="date"
               value={filters.startDate || ''}
               onChange={(e) => handleFilterChange('startDate', e.target.value || undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Fecha fin
             </label>
-            <input
+            <Input
               type="date"
               value={filters.endDate || ''}
               onChange={(e) => handleFilterChange('endDate', e.target.value || undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
 
         <div className="mt-4 flex justify-between items-center">
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setFilters({ limit: 50, offset: 0 })}
-            className="text-sm text-blue-600 hover:text-blue-700"
           >
             Limpiar filtros
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleExport}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
           >
-            📥 Exportar CSV
-          </button>
+                        <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
         </div>
       </div>
 
       {/* Estadísticas */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Registros de Auditoría</h3>
-          <span className="text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registros de Auditoría</h3>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
             Total: {totalLogs} registros
           </span>
         </div>
@@ -258,105 +275,103 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
       {/* Lista de logs */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="divide-y divide-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {logs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               No se encontraron registros de auditoría
             </div>
           ) : (
-            logs.map((log) => (
-              <div
-                key={log.id}
-                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => setSelectedLog(log)}
-              >
-                <div className="flex items-start space-x-4">
-                  {/* Avatar del usuario */}
-                  <div className="flex-shrink-0">
-                    {log.user_avatar ? (
-                      <img
-                        src={log.user_avatar}
-                        alt={log.user_name || 'Usuario'}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
-                        {log.user_name?.[0]?.toUpperCase() || '?'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contenido del log */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{getActionIcon(log.action)}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                        {actionLabels[log.action] || log.action}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {entityTypeLabels[log.entity_type] || log.entity_type}
-                      </span>
-                    </div>
-
-                    <div className="mt-1">
-                      <span className="font-medium text-gray-900">
-                        {log.user_name || log.username || 'Usuario desconocido'}
-                      </span>
-                      {log.user_email && (
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({log.user_email})
-                        </span>
+            logs.map((log) => {
+              const ActionIcon = getActionIcon(log.action);
+              return (
+                <div
+                  key={log.id}
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedLog(log)}
+                >
+                  <div className="flex items-start space-x-4">
+                    {/* Avatar del usuario */}
+                    <div className="flex-shrink-0">
+                      {log.user_avatar ? (
+                        <img
+                          src={log.user_avatar}
+                          alt={log.user_name || 'Usuario'}
+                          className="w-10 h-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold">
+                          {log.user_name?.[0]?.toUpperCase() || '?'}
+                        </div>
                       )}
                     </div>
 
-                    {renderLogDetails(log)}
+                    {/* Contenido del log */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <ActionIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
+                          {actionLabels[log.action] || log.action}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {entityTypeLabels[log.entity_type] || log.entity_type}
+                        </span>
+                      </div>
 
-                    <div className="mt-2 text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(log.created_at), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
+                      <div className="mt-1">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {log.user_name || log.username || 'Usuario desconocido'}
+                        </span>
+                        {log.user_email && (
+                          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                            ({log.user_email})
+                          </span>
+                        )}
+                      </div>
+
+                      {renderLogDetails(log)}
+
+                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {formatDistanceToNow(new Date(log.created_at), {
+                          addSuffix: true,
+                          locale: es,
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Indicador de más detalles */}
+                    <div className="flex-shrink-0">
+                      <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                   </div>
-
-                  {/* Indicador de más detalles */}
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* Botón cargar más */}
         {hasMore && (
-          <div className="p-4 border-t border-gray-200 text-center">
-            <button
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-center">
+            <Button
               onClick={handleLoadMore}
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+              variant="secondary"
             >
-              {loading ? 'Cargando...' : 'Cargar más'}
-            </button>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cargando...
+                </>
+              ) : (
+                'Cargar más'
+              )}
+            </Button>
           </div>
         )}
       </div>
@@ -364,35 +379,33 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
       {/* Modal de detalles */}
       {selectedLog && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedLog(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">Detalles del Registro</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Detalles del Registro</h3>
                 <button
                   onClick={() => setSelectedLog(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">ID</label>
-                  <p className="text-gray-900">{selectedLog.id}</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ID</label>
+                  <p className="text-gray-900 dark:text-white">{selectedLog.id}</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Acción</label>
-                  <p className="text-gray-900">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Acción</label>
+                  <p className="text-gray-900 dark:text-white">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getActionColor(selectedLog.action)}`}>
                       {actionLabels[selectedLog.action] || selectedLog.action}
                     </span>
@@ -400,19 +413,19 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Tipo de Entidad</label>
-                  <p className="text-gray-900">{entityTypeLabels[selectedLog.entity_type] || selectedLog.entity_type}</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Entidad</label>
+                  <p className="text-gray-900 dark:text-white">{entityTypeLabels[selectedLog.entity_type] || selectedLog.entity_type}</p>
                 </div>
 
                 {selectedLog.entity_id && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">ID de Entidad</label>
-                    <p className="text-gray-900">{selectedLog.entity_id}</p>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ID de Entidad</label>
+                    <p className="text-gray-900 dark:text-white">{selectedLog.entity_id}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Usuario</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Usuario</label>
                   <div className="flex items-center space-x-3 mt-1">
                     {selectedLog.user_avatar ? (
                       <img
@@ -421,24 +434,24 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold">
                         {selectedLog.user_name?.[0]?.toUpperCase() || '?'}
                       </div>
                     )}
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-white">
                         {selectedLog.user_name || selectedLog.username || 'Usuario desconocido'}
                       </p>
                       {selectedLog.user_email && (
-                        <p className="text-sm text-gray-500">{selectedLog.user_email}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{selectedLog.user_email}</p>
                       )}
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Fecha</label>
-                  <p className="text-gray-900">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fecha</label>
+                  <p className="text-gray-900 dark:text-white">
                     {new Date(selectedLog.created_at).toLocaleString('es-ES', {
                       year: 'numeric',
                       month: 'long',
@@ -452,8 +465,8 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
                 {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Detalles Adicionales</label>
-                    <pre className="mt-2 p-4 bg-gray-50 rounded-md text-sm overflow-x-auto">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalles Adicionales</label>
+                    <pre className="mt-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-md text-sm overflow-x-auto text-gray-900 dark:text-white">
                       {JSON.stringify(selectedLog.details, null, 2)}
                     </pre>
                   </div>
