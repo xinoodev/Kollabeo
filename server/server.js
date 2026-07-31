@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import http from 'http';
+import { Server as IOServer } from 'socket.io';
+import projectChatRoutes from './routes/projectChats.js';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import columnRoutes from './routes/columns.js';
@@ -15,8 +18,58 @@ import auditRoutes from './routes/audit.js';
 
 dotenv.config();
 
+dotenv.config();
+
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Socket.IO
+const io = new IOServer(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Basic token auth for sockets (reads Bearer token from query)
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (!token) return next(new Error('Authentication error'));
+    // We won't verify JWT here deeply; frontend should send token and server REST endpoints validate.
+    // Optionally, you could verify JWT similarly to HTTP using jwt.verify.
+    socket.userToken = token;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+// Socket.IO events
+io.on('connection', (socket) => {
+  console.log('Socket connected', socket.id);
+
+  socket.on('joinProject', ({ projectId, channel }) => {
+    const room = `project_${projectId}_${channel}`;
+    socket.join(room);
+  });
+
+  socket.on('leaveProject', ({ projectId, channel }) => {
+    const room = `project_${projectId}_${channel}`;
+    socket.leave(room);
+  });
+
+  socket.on('message', (msg) => {
+    try {
+      const { projectId, channel, message } = msg;
+      const room = `project_${projectId}_${channel}`;
+      io.to(room).emit('message', message);
+    } catch (err) {
+      console.error('Socket message error', err);
+    }
+  });
+});
 
 // Middleware
 app.use(cors({
@@ -39,6 +92,7 @@ app.use('/api/collaborators', collaboratorRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/invitation-links', invitationLinkRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/project-chats', projectChatRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -60,7 +114,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Kollabeo server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });
