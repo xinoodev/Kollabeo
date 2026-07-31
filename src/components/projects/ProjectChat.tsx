@@ -9,9 +9,11 @@ interface ProjectChatProps {
   projectId: number;
   canViewAdmins?: boolean;
   initialChannel?: 'general' | 'admins';
+  socket?: Socket | null;
+  onNewMessage?: (msg: ChatMessage, channel: 'general' | 'admins') => void;
 }
 
-export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmins, initialChannel = 'general' }) => {
+export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmins, initialChannel = 'general', socket: providedSocket = null, onNewMessage }) => {
   const [selectedChannel, setSelectedChannel] = useState<'general' | 'admins'>(initialChannel);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
@@ -38,33 +40,39 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
     return () => { mounted = false; };
   }, [projectId, selectedChannel]);
 
-  // Initialize socket once
+  // Initialize socket once (use provided socket if available)
   useEffect(() => {
     const token = localStorage.getItem('token');
     const baseUrl = import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:5000';
-    const socket = io(baseUrl, { auth: { token } });
-    socketRef.current = socket;
+    const localSocket = providedSocket ?? io(baseUrl, { auth: { token } });
+    socketRef.current = localSocket;
 
-    socket.on('connect', () => {
-      // join initial channel
-      socket.emit('joinProject', { projectId, channel: selectedChannel });
-      prevChannelRef.current = selectedChannel;
-    });
-
-    socket.on('message', (msg: ChatMessage) => {
-      setMessages(prev => [...prev, msg]);
+    const handleIncoming = (payload: any) => {
+      const incoming: ChatMessage = payload && payload.message ? payload.message : payload;
+      const channelFromPayload: 'general' | 'admins' = payload && payload.channel ? payload.channel : selectedChannel;
+      // Only add messages for the currently selected channel
+      if (channelFromPayload !== selectedChannel) return;
+      setMessages(prev => [...prev, incoming]);
       setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
-    });
+      if (onNewMessage && incoming.user_id !== user?.id) {
+        onNewMessage(incoming, channelFromPayload);
+      }
+    };
+
+    localSocket.on('message', handleIncoming);
 
     return () => {
+      localSocket.off('message', handleIncoming);
       try {
         if (prevChannelRef.current) {
-          socket.emit('leaveProject', { projectId, channel: prevChannelRef.current });
+          localSocket.emit('leaveProject', { projectId, channel: prevChannelRef.current });
         }
       } catch (e) {}
-      socket.disconnect();
+      if (!providedSocket) {
+        try { localSocket.disconnect(); } catch (e) {}
+      }
     };
-  }, [projectId]);
+  }, [projectId, providedSocket, selectedChannel, onNewMessage, user?.id]);
 
   // Handle joining/leaving when channel changes
   useEffect(() => {
@@ -142,7 +150,17 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
               </div>
             )}
             <div>
-              <div className="text-sm font-medium text-blue-500">{m.full_name || 'Unknown'}</div>
+              {(() => {
+                const displayName = m.full_name || (m.user_id === user?.id ? 'You' : 'Unknown');
+                return (
+                  <div className="flex items-center space-x-2">
+                    <div className="text-sm font-medium text-blue-500">{displayName}</div>
+                    {m.user_id === user?.id && (
+                      <div className="text-xs text-gray-400">(you)</div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="text-sm text-gray-700 dark:text-gray-200">{m.content}</div>
               <div className="text-xs text-gray-400">{new Date(m.created_at).toLocaleString()}</div>
             </div>

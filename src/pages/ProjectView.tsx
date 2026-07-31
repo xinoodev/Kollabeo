@@ -11,6 +11,7 @@ import { MembersModal } from '../components/members/MembersModal';
 import { ProjectSettingsModal } from '../components/projects/ProjectSettingsModal';
 import { AuditLogModal } from '../components/audit/AuditLogModal';
 import { ProjectChat } from '../components/projects/ProjectChat';
+import { io, Socket } from 'socket.io-client';
 import { ArrowLeft, Users, Settings, FileText, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../lib/api';
@@ -38,6 +39,8 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   const { user } = useAuth();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const socketRef = React.useRef<Socket | null>(null);
 
   const isOwner = user?.id === project.owner_id;
 
@@ -50,6 +53,37 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   useEffect(() => {
     loadUserRole();
   }, [project.id]);
+
+  // Create a shared socket to listen for background chat messages and increment unread counter
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:5000';
+    const socket = io(baseUrl, { auth: { token } });
+    socketRef.current = socket;
+
+    // Join general channel always; join admins if user can manage
+    socket.emit('joinProject', { projectId: project.id, channel: 'general' });
+    if (canManageProject()) {
+      socket.emit('joinProject', { projectId: project.id, channel: 'admins' });
+    }
+
+    const handler = (payload: any) => {
+      const incoming = payload && payload.message ? payload.message : payload;
+      const channel = payload && payload.channel ? payload.channel : 'general';
+      if (!isChatOpen && incoming.user_id !== user?.id) {
+        setUnreadCount((n) => n + 1);
+      }
+    };
+
+    socket.on('message', handler);
+
+    return () => {
+      try { socket.emit('leaveProject', { projectId: project.id, channel: 'general' }); } catch (e) {}
+      try { socket.emit('leaveProject', { projectId: project.id, channel: 'admins' }); } catch (e) {}
+      socket.off('message', handler);
+      try { socket.disconnect(); } catch (e) {}
+    };
+  }, [project.id, user?.id, userRole?.role]);
 
   const loadUserRole = async () => {
     try {
@@ -259,19 +293,27 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
 
       {/* Floating chat button + panel */}
       <div className="fixed right-6 bottom-6 z-50">
-        <button
-          aria-label="Open project chat"
-          onClick={() => setIsChatOpen(prev => !prev)}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:scale-105"
-          style={{ backgroundColor: '#2563eb' }}
-        >
-          <MessageCircle className="w-6 h-6 text-white" />
-        </button>
+        <div className="relative">
+          <button
+            aria-label="Open project chat"
+            onClick={() => { if (!isChatOpen) setUnreadCount(0); setIsChatOpen(prev => !prev); }}
+            className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:scale-105"
+            style={{ backgroundColor: '#2563eb' }}
+          >
+            <MessageCircle className="w-6 h-6 text-white" />
+          </button>
+
+          {unreadCount > 0 && !isChatOpen && (
+            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+              +{unreadCount}
+            </span>
+          )}
+        </div>
 
         {isChatOpen && (
           <div className="mt-4 flex flex-col items-end space-y-4">
-            <div className="w-96">
-                <ProjectChat projectId={project.id} canViewAdmins={canManageProject()} initialChannel="general" />
+              <div className="w-96">
+                <ProjectChat projectId={project.id} canViewAdmins={canManageProject()} initialChannel="general" socket={socketRef.current} />
             </div>
 
             

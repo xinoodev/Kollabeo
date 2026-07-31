@@ -65,7 +65,8 @@ io.on('connection', (socket) => {
       const { projectId, channel, message } = msg;
       const room = `project_${projectId}_${channel}`;
       // Emit to all other sockets in the room, excluding the sender to avoid duplicates
-      socket.to(room).emit('message', message);
+      // Include the channel in the payload so clients (including background listeners) know which channel the message belongs to
+      socket.to(room).emit('message', { channel, message });
     } catch (err) {
       console.error('Socket message error', err);
     }
