@@ -3,7 +3,7 @@ import { ChatMessage } from '../../types';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
-import { MessageCircle, Shield } from 'lucide-react';
+import { MessageCircle, Shield, User } from 'lucide-react';
 
 interface ProjectChatProps {
   projectId: number;
@@ -41,7 +41,8 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
   // Initialize socket once
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const socket = io((process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:5000'), { auth: { token } });
+    const baseUrl = import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:5000';
+    const socket = io(baseUrl, { auth: { token } });
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -85,7 +86,15 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
       const saved = await apiClient.postProjectChat(projectId, selectedChannel, text.trim());
       setText('');
       socketRef.current?.emit('message', { projectId, channel: selectedChannel, message: saved });
-      setMessages(prev => [...prev, saved]);
+      setMessages(prev => {
+        const next = [...prev, saved];
+        setTimeout(() => {
+          try {
+            scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+          } catch (e) {}
+        }, 50);
+        return next;
+      });
     } catch (err) {
       console.error('Send message failed', err);
     }
@@ -125,9 +134,15 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
       <div ref={scrollRef} className="h-64 overflow-y-auto mb-3 p-3 space-y-2">
         {messages.map(m => (
           <div key={m.id} className="flex items-start space-x-2">
-            <img src={m.avatar_url || '/avatar.png'} alt="avatar" className="w-8 h-8 rounded-full" />
+            {m.avatar_url ? (
+              <img src={m.avatar_url} alt={m.full_name || 'avatar'} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-blue-600" />
+              </div>
+            )}
             <div>
-              <div className="text-sm font-medium">{m.full_name || 'Unknown'}</div>
+              <div className="text-sm font-medium text-blue-500">{m.full_name || 'Unknown'}</div>
               <div className="text-sm text-gray-700 dark:text-gray-200">{m.content}</div>
               <div className="text-xs text-gray-400">{new Date(m.created_at).toLocaleString()}</div>
             </div>
