@@ -60,12 +60,36 @@ A collaborative task management platform built with PostgreSQL, Express.js, Reac
    
    Update the `.env` file with your database credentials:
    ```env
+   # Database Configuration
    DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=kollabeo
-   DB_USER=your_username
+   DB_PORT=database port
+   DB_NAME=database name
+   DB_USER=database username
    DB_PASSWORD=your_password
+
+   # JWT Configuration
    JWT_SECRET=your_super_secret_jwt_key_here
+   JWT_EXPIRES_IN=7d
+
+   # Server Configuration
+   PORT=5000
+   NODE_ENV=development
+
+   # CORS Configuration
+   CLIENT_URL=http://localhost:5173
+
+   # Email Configuration
+   USE_REAL_SMTP=true
+
+   # SMTP Configuration (Gmail example)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=tu-email@gmail.com
+   SMTP_PASSWORD=tu-app-password-de-16-caracteres
+   FROM_EMAIL=tu-email@gmail.com
+
+   # LOGO URL
+   LOGO_URL="https://res.cloudinary.com/dg7ngopcp/image/upload/v1762980016/logo-fondo-claro_gtmdzy.png"
    ```
 
 5. **Run Database Migrations**
