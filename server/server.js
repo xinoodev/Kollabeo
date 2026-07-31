@@ -64,7 +64,8 @@ io.on('connection', (socket) => {
     try {
       const { projectId, channel, message } = msg;
       const room = `project_${projectId}_${channel}`;
-      io.to(room).emit('message', message);
+      // Emit to all other sockets in the room, excluding the sender to avoid duplicates
+      socket.to(room).emit('message', message);
     } catch (err) {
       console.error('Socket message error', err);
     }
