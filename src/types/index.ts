@@ -146,6 +146,17 @@ export interface AuditLogFilters {
   endDate?: string;
 }
 
+export interface ChatMessage {
+  id: number;
+  project_id: number;
+  channel: 'general' | 'admins';
+  user_id: number;
+  content: string;
+  created_at: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
 export interface AuditLogStats {
   byAction: Array<{ action: string; count: number }>;
   byUser: Array<{

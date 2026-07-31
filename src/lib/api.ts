@@ -404,6 +404,18 @@ class ApiClient {
     return this.request('/audit/actions');
   }
 
+  // Chat methods
+  async getProjectChat(projectId: number, channel: 'general' | 'admins') {
+    return this.request(`/project-chats/${projectId}/${channel}`);
+  }
+
+  async postProjectChat(projectId: number, channel: 'general' | 'admins', content: string) {
+    return this.request(`/project-chats/${projectId}/${channel}`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
   async getAuditLog(logId: number): Promise<AuditLog> {
     return this.request(`/audit/log/${logId}`);
   }

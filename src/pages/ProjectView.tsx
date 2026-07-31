@@ -10,6 +10,7 @@ import { EditColumnModal } from '../components/columns/EditColumnModal';
 import { MembersModal } from '../components/members/MembersModal';
 import { ProjectSettingsModal } from '../components/projects/ProjectSettingsModal';
 import { AuditLogModal } from '../components/audit/AuditLogModal';
+import { ProjectChat } from '../components/projects/ProjectChat';
 import { ArrowLeft, Users, Settings, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../lib/api';
@@ -253,6 +254,12 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
         onClose={() => setIsAuditLogModalOpen(false)}
         project={project}
       />
+
+      {/* Project chat panels */}
+      <div className="fixed right-6 bottom-6 w-96 space-y-4">
+        <ProjectChat projectId={project.id} channel="general" />
+        {canManageProject() && <ProjectChat projectId={project.id} channel="admins" canViewAdmins />}
+      </div>
     </>
   );
 };
