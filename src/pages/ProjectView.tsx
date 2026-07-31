@@ -199,14 +199,16 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                   <Users className="h-4 w-4" />
                   <span>Members</span>
                 </button>
-                <button
-                  onClick={handleOpenAudit}
-                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
-                  title="Ver auditoría del proyecto"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Audit Log</span>
-                </button>
+                {canManageProject() && (
+                  <button
+                    onClick={handleOpenAudit}
+                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                    title="Ver auditoría del proyecto"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Audit Log</span>
+                  </button>
+                )}
                 {isOwner && (
                   <button
                     onClick={() => setIsSettingsModalOpen(true)}
