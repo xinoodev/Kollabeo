@@ -1,0 +1,70 @@
+{
+  "header": {
+    "newProject": "Nuevo proyecto",
+    "profileSettings": "Configuración de perfil",
+    "signOut": "Cerrar sesión",
+    "theme": "Tema"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "english": "English",
+    "spanish": "Español",
+    "label": "Idioma"
+  },
+  "auth": {
+    "signInToYourAccount": "Inicia sesión en tu cuenta",
+    "createYourAccount": "Crea tu cuenta",
+    "fullName": "Nombre completo",
+    "enterFullName": "Introduce tu nombre completo",
+    "email": "Correo electrónico",
+    "enterEmail": "Introduce tu correo",
+    "password": "Contraseña",
+    "enterPassword": "Introduce tu contraseña",
+    "forgotPassword": "¿Olvidaste la contraseña?",
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "needAccount": "¿Necesitas una cuenta? Regístrate",
+    "alreadyHaveAccount": "¿Ya tienes cuenta? Inicia sesión",
+    "signingIn": "Iniciando sesión...",
+    "creatingAccount": "Creando cuenta..."
+  },
+  "projects": {
+    "createTitle": "Crear nuevo proyecto",
+    "projectName": "Nombre del proyecto",
+    "enterProjectName": "Introduce el nombre del proyecto",
+    "descriptionOptional": "Descripción (opcional)",
+    "enterProjectDescription": "Introduce la descripción del proyecto",
+    "projectColor": "Color del proyecto",
+    "cancel": "Cancelar",
+    "creating": "Creando...",
+    "createProject": "Crear proyecto",
+    "membersOne": "1 miembro",
+    "membersMany": "{{count}} miembros",
+    "noProjects": "Aún no hay proyectos"
+  },
+  "buttons": {
+    "create": "Crear",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "backToSignIn": "Volver al inicio de sesión",
+    "resetPassword": "Restablecer contraseña",
+    "resettingPassword": "Restableciendo contraseña..."
+  },
+  "reset": {
+    "enterNewPassword": "Introduce tu nueva contraseña abajo",
+    "passwordResetSuccessful": "Contraseña restablecida con éxito",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+    "resetSuccessMessage": "¡Tu contraseña se ha restablecido correctamente! Serás redirigido al panel.",
+    "resetFailed": "No se pudo restablecer la contraseña. El enlace puede ser inválido o haber expirado."
+  },
+  "common": {
+    "kollabeoLogoAlt": "Kollabeo"
+  }
+}

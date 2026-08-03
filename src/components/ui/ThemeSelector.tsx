@@ -1,6 +1,7 @@
 import React from "react";
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useTheme } from "../../contexts/ThemeContext";
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ThemeSelectorProps {
     showLabels?: boolean;
@@ -12,11 +13,12 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     size = 'md'
 }) => {
     const { theme, setTheme } = useTheme();
+    const { t } = useLanguage();
 
     const themes = [
-        { value: 'light' as const, label: 'Light', icon: Sun },
-        { value: 'dark' as const, label: 'Dark', icon: Moon },
-        { value: 'system' as const, label: 'System', icon: Monitor },
+        { value: 'light' as const, label: t('theme.light'), icon: Sun },
+        { value: 'dark' as const, label: t('theme.dark'), icon: Moon },
+        { value: 'system' as const, label: t('theme.system'), icon: Monitor },
     ];
 
     const buttonSize = size === 'sm' ? 'p-2' : 'p-3';

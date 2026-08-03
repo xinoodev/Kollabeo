@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const [selectedColor, setSelectedColor] = useState(PROJECT_COLORS[0]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,32 +55,32 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Project" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('projects.createTitle')} size="md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
-          label="Project Name"
+          label={t('projects.projectName')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter project name"
+          placeholder={t('projects.enterProjectName')}
           required
         />
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description (optional)
+            {t('projects.descriptionOptional')}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             rows={3}
-            placeholder="Enter project description"
+            placeholder={t('projects.enterProjectDescription')}
           />
         </div>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Project Color
+            {t('projects.projectColor')}
           </label>
           <div className="flex space-x-2">
             {PROJECT_COLORS.map((color) => (
@@ -97,10 +99,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
         <div className="flex space-x-3 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t('projects.cancel')}
           </Button>
           <Button type="submit" disabled={loading || !name.trim()}>
-            {loading ? 'Creating...' : 'Create Project'}
+            {loading ? t('projects.creating') : t('projects.createProject')}
           </Button>
         </div>
       </form>

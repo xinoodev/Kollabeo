@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from '../ui/Button';
 import { ThemeSelector } from '../ui/ThemeSelector';
+import LanguageSelector from '../ui/LanguageSelector';
 import { LogOut, Plus, User, Settings } from 'lucide-react';
 
 interface HeaderProps {
@@ -15,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
   const { user, signOut } = useAuth();
   const { isDark } = useTheme();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { t } = useLanguage();
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -85,9 +88,12 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-2 mb-2">
                         <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('header.theme')}</span>
                       </div>
                       <ThemeSelector showLabels={false} size="sm" />
+                      <div className="mt-2 px-1">
+                        <LanguageSelector />
+                      </div>
                     </div>
                     {onNavigateToProfile && (
                       <button
@@ -98,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                       >
                         <User className="mr-2 h-4 w-4" />
-                        Profile Settings
+                        {t('header.profileSettings')}
                       </button>
                     )}
                     <button
@@ -106,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t('header.signOut')}
                     </button>
                   </div>
                 </div>

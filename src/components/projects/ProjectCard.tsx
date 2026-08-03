@@ -2,6 +2,7 @@ import React from 'react';
 import { Project } from '../../types';
 import { Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProjectCardProps {
   project: Project;
@@ -10,7 +11,8 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const memberCount = project.member_count || 1;
-  const memberText = memberCount === 1 ? '1 member' : `${memberCount} members`;
+  const { t } = useLanguage();
+  const memberText = memberCount === 1 ? t('projects.membersOne') : t('projects.membersMany', { count: memberCount });
 
   return (
     <div

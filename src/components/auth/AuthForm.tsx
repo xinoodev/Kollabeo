@@ -8,6 +8,7 @@ import { ThemeSelector } from '../ui/ThemeSelector';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const AuthForm: React.FC = () => {
   // Check if we're on the verification page
@@ -45,6 +46,7 @@ export const AuthForm: React.FC = () => {
 
   const { signIn, signUp } = useAuth();
   const { isDark } = useTheme();
+  const { t } = useLanguage();
 
   if (showVerificationScreen) {
     return (
@@ -108,7 +110,7 @@ export const AuthForm: React.FC = () => {
             className="mx-auto h-12 w-48 rounded-lg object-cover mb-4"
           />
           <p className="mt-2 text-gray-600 dark:text-gray-300">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            {isLogin ? t('auth.signInToYourAccount') : t('auth.createYourAccount')}
           </p>
         </div>
 
@@ -122,31 +124,31 @@ export const AuthForm: React.FC = () => {
           <div className="space-y-4">
             {!isLogin && (
               <Input
-                label="Full Name"
+                label={t('auth.fullName')}
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                placeholder="Enter your full name"
+                placeholder={t('auth.enterFullName')}
               />
             )}
             
             <Input
-              label="Email"
+              label={t('auth.email')}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your email"
+              placeholder={t('auth.enterEmail')}
             />
             
             <Input
-              label="Password"
+              label={t('auth.password')}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter your password"
+              placeholder={t('auth.enterPassword')}
             />
             {isLogin && (
               <div className="mt-2 text-right">
@@ -155,7 +157,7 @@ export const AuthForm: React.FC = () => {
                   onClick={() => setShowForgotPassword(true)}
                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-200"
                 >
-                  Forgot Password?
+                  {t('auth.forgotPassword')}
                 </button>
               </div>
             )}
@@ -169,7 +171,7 @@ export const AuthForm: React.FC = () => {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isLogin ? 'Signing in...' : 'Creating account...'}
+                {isLogin ? t('auth.signingIn') : t('auth.creatingAccount')}
               </>
             ) : (
               <>
@@ -178,19 +180,19 @@ export const AuthForm: React.FC = () => {
                 ) : (
                   <UserPlus className="mr-2 h-4 w-4" />
                 )}
-                {isLogin ? 'Sign In' : 'Sign Up'}
+                {isLogin ? t('auth.signIn') : t('auth.signUp')}
               </>
             )}
           </Button>
 
           <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 text-sm font-medium transition-colors duration-200"
-            >
-              {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 text-sm font-medium transition-colors duration-200"
+              >
+                {isLogin ? t('auth.needAccount') : t('auth.alreadyHaveAccount')}
+              </button>
           </div>
         </form>
 

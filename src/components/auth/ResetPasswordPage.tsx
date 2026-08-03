@@ -4,6 +4,7 @@ import { ThemeSelector } from "../ui/ThemeSelector";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { CheckCircle, AlertCircle, Loader2, Lock } from "lucide-react";
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ResetPasswordPageProps {
     token: string;
@@ -15,19 +16,20 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
     const { resetPassword } = useAuth();
+    const { t } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
             setStatus("error");
-            setMessage("Passwords do not match");
+            setMessage(t('reset.passwordsDoNotMatch'));
             return;
         }
 
         if (password.length < 6) {
             setStatus("error");
-            setMessage("Password must be at least 6 characters long");
+            setMessage(t('reset.passwordTooShort'));
             return;
         }
 
@@ -41,7 +43,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
                 setMessage(error.message);
             } else {
                 setStatus("success");
-                setMessage("Your password has been reset successfully! You will be redirected to the dashboard.");
+                setMessage(t('reset.resetSuccessMessage'));
                 setTimeout(() => {
                     window.history.replaceState({}, "", "/");
                     window.location.reload();
@@ -49,7 +51,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
             }
         } catch (error: any) {
             setStatus("error");
-            setMessage("Failed to reset password. The link may be invalid or expired.");
+            setMessage(t('reset.resetFailed'));
         }
     };
 
@@ -64,9 +66,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
                     <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
                         <Lock className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Reset Password</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('buttons.resetPassword')}</h2>
                     <p className="mt-2 text-gray-600 dark:text-gray-300">
-                        Enter your new password below
+                        {t('reset.enterNewPassword')}
                     </p>
                 </div>
 
@@ -77,7 +79,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
                                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                Password Reset Successful
+                                {t('reset.passwordResetSuccessful')}
                             </h3>
                             <p className="text-gray-600 dark:text-gray-300">
                                 {message}
@@ -96,22 +98,22 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
 
                             <div className="space-y-4">
                                 <Input
-                                    label="New Password"
+                                    label={t('auth.password')}
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    placeholder="Enter new password"
+                                    placeholder={t('auth.enterPassword')}
                                     autoFocus
                                 />
 
                                 <Input
-                                    label="Confirm Password"
+                                    label={t('auth.password')}
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    placeholder="Confirm new password"
+                                    placeholder={t('auth.enterPassword')}
                                 />
                             </div>
 
@@ -121,14 +123,14 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token }) =
                                 disabled={status === "loading"}
                             >
                                 {status === "loading" ? (
-                                    <>
+                                        <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Resetting password...
+                                        {t('buttons.resettingPassword')}
                                     </>
                                 ) : (
                                     <>
                                         <Lock className="mr-2 h-4 w-4" />
-                                        Reset Password
+                                        {t('buttons.resetPassword')}
                                     </>
                                 )}
                             </Button>

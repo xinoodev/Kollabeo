@@ -1,0 +1,70 @@
+{
+  "header": {
+    "newProject": "New Project",
+    "profileSettings": "Profile Settings",
+    "signOut": "Sign Out",
+    "theme": "Theme"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "english": "English",
+    "spanish": "Español",
+    "label": "Language"
+  },
+  "auth": {
+    "signInToYourAccount": "Sign in to your account",
+    "createYourAccount": "Create your account",
+    "fullName": "Full Name",
+    "enterFullName": "Enter your full name",
+    "email": "Email",
+    "enterEmail": "Enter your email",
+    "password": "Password",
+    "enterPassword": "Enter your password",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "needAccount": "Need an account? Sign up",
+    "alreadyHaveAccount": "Already have an account? Sign in",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account..."
+  },
+  "projects": {
+    "createTitle": "Create New Project",
+    "projectName": "Project Name",
+    "enterProjectName": "Enter project name",
+    "descriptionOptional": "Description (optional)",
+    "enterProjectDescription": "Enter project description",
+    "projectColor": "Project Color",
+    "cancel": "Cancel",
+    "creating": "Creating...",
+    "createProject": "Create Project",
+    "membersOne": "1 member",
+    "membersMany": "{{count}} members",
+    "noProjects": "No projects yet"
+  },
+  "buttons": {
+    "create": "Create",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "backToSignIn": "Back to Sign In",
+    "resetPassword": "Reset Password",
+    "resettingPassword": "Resetting password..."
+  },
+  "reset": {
+    "enterNewPassword": "Enter your new password below",
+    "passwordResetSuccessful": "Password Reset Successful",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters long",
+    "resetSuccessMessage": "Your password has been reset successfully! You will be redirected to the dashboard.",
+    "resetFailed": "Failed to reset password. The link may be invalid or expired."
+  },
+  "common": {
+    "kollabeoLogoAlt": "Kollabeo Logo"
+  }
+}
