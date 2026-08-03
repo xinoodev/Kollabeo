@@ -5,6 +5,7 @@ import { Input } from '../ui/Input';
 import { RichTextEditor } from '../ui/RichTextEditor';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -15,10 +16,10 @@ interface CreateTaskModalProps {
 }
 
 const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-700' },
-  { value: 'medium', label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'High', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-700' },
+  { value: 'low', label: 'priority.low', color: 'bg-gray-100 text-gray-700' },
+  { value: 'medium', label: 'priority.medium', color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: 'priority.high', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'urgent', label: 'priority.urgent', color: 'bg-red-100 text-red-700' },
 ] as const;
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -35,6 +36,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [tags, setTags] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,24 +68,24 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Task" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('tasks.createTitle')} size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
-          label="Task Title"
+          label={t('tasks.title')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter task title"
+          placeholder={t('tasks.enterTitle')}
           required
         />
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description (optional)
+            {t('tasks.descriptionOptional')}
           </label>
           <RichTextEditor
             value={description}
             onChange={setDescription}
-            placeholder="Enter task description"
+            placeholder={t('tasks.enterDescription')}
             minHeight="150px"
           />
         </div>
@@ -91,7 +93,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Priority
+              {t('tasks.priority')}
             </label>
             <select
               value={priority}
@@ -100,14 +102,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             >
               {PRIORITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </option>
               ))}
             </select>
           </div>
 
           <Input
-            label="Due Date (optional)"
+            label={t('tasks.dueDateOptional')}
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -115,18 +117,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         </div>
 
         <Input
-          label="Tags (optional)"
+          label={t('tasks.tagsOptional')}
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          placeholder="Enter tags separated by commas"
+          placeholder={t('tasks.enterTagsPlaceholder')}
         />
 
         <div className="flex space-x-3 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t('buttons.cancel')}
           </Button>
           <Button type="submit" disabled={loading || !title.trim()}>
-            {loading ? 'Creating...' : 'Create Task'}
+            {loading ? t('tasks.creating') : t('tasks.create')}
           </Button>
         </div>
       </form>

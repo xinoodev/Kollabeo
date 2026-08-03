@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { TaskColumn } from '../../types';
 import { apiClient } from '../../lib/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface EditColumnModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const EditColumnModal: React.FC<EditColumnModalProps> = ({
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState(COLUMN_COLORS[0]);
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   // Populate form when column changes
   useEffect(() => {
@@ -73,19 +75,19 @@ export const EditColumnModal: React.FC<EditColumnModalProps> = ({
   if (!column) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Edit Column" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('columns.editTitle')} size="md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
-          label="Column Name"
+          label={t('columns.name')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter column name"
+          placeholder={t('columns.enterName')}
           required
         />
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Column Color
+            {t('columns.color')}
           </label>
           <div className="flex space-x-2">
             {COLUMN_COLORS.map((color) => (
@@ -104,10 +106,10 @@ export const EditColumnModal: React.FC<EditColumnModalProps> = ({
 
         <div className="flex space-x-3 pt-4">
           <Button type="button" variant="secondary" onClick={handleClose}>
-            Cancel
+            {t('buttons.cancel')}
           </Button>
           <Button type="submit" disabled={loading || !name.trim()}>
-            {loading ? 'Updating...' : 'Update Column'}
+            {loading ? t('columns.updating') : t('columns.update')}
           </Button>
         </div>
       </form>

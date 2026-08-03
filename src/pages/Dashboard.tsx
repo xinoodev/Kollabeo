@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Header } from '../components/layout/Header';
 import { ProjectList } from '../components/projects/ProjectList';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
@@ -12,6 +13,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onProjectSelect, onNavigateToProfile }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { t } = useLanguage();
 
   const handleProjectCreated = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -26,8 +28,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onProjectSelect, onNavigat
       
       <main className="mx-auto px-4 sm:px-6 lg:px-[5.2rem] py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your Projects</h2>
-          <p className="text-gray-600 dark:text-gray-300">Manage your tasks and collaborate with your team.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.title')}</h2>
+          <p className="text-gray-600 dark:text-gray-300">{t('dashboard.subtitle')}</p>
         </div>
 
         <ProjectList 

@@ -18,45 +18,13 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AuditLogViewerProps {
   projectId: number;
 }
 
-const actionLabels: Record<AuditAction, string> = {
-  task_created: 'Task created',
-  task_updated: 'Task updated',
-  task_deleted: 'Task deleted',
-  task_assigned: 'Task assigned',
-  task_unassigned: 'Task unassigned',
-  task_moved: 'Task moved',
-  task_priority_changed: 'Task priority changed',
-  member_added: 'Member added',
-  member_removed: 'Member removed',
-  member_role_changed: 'Member role changed',
-  invitation_sent: 'Invitation sent',
-  invitation_accepted: 'Invitation accepted',
-  invitation_rejected: 'Invitation rejected',
-  invitation_cancelled: 'Invitation cancelled',
-  collaborator_added: 'Collaborator added',
-  collaborator_removed: 'Collaborator removed',
-  column_created: 'Column created',
-  column_renamed: 'Column renamed',
-  column_moved: 'Column moved',
-  column_deleted: 'Column deleted',
-  project_created: 'Project created',
-  project_updated: 'Project updated',
-  project_deleted: 'Project deleted',
-};
-
-const entityTypeLabels: Record<AuditEntityType, string> = {
-  task: 'Task',
-  project_member: 'Member',
-  invitation: 'Invitation',
-  task_collaborator: 'Collaborator',
-  column: 'Column',
-  project: 'Project',
-};
+// action and entity labels are looked up via translations inside the component using `t()`
 
 const getActionIcon = (action: AuditAction) => {
   if (action.startsWith('task_')) return FileText;
@@ -93,6 +61,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
   const [hasMore, setHasMore] = useState(false);
   const [availableActions, setAvailableActions] = useState<string[]>([]);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadAuditLogs();
@@ -201,7 +170,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('audit.filters')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -213,10 +182,10 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
               onChange={(e) => handleFilterChange('action', e.target.value || undefined)}
               className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             >
-              <option value="">All actions</option>
+              <option value="">{t('audit.allActions')}</option>
               {availableActions.map(action => (
                 <option key={action} value={action}>
-                  {actionLabels[action as AuditAction] || action}
+                  {t(`audit.actions.${action}`)}
                 </option>
               ))}
             </select>
@@ -224,7 +193,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Start date
+              {t('audit.startDate')}
             </label>
             <Input
               type="date"
@@ -235,7 +204,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              End date
+              {t('audit.endDate')}
             </label>
             <Input
               type="date"
@@ -250,23 +219,23 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
             variant="secondary"
             onClick={() => setFilters({ limit: 50, offset: 0 })}
           >
-            Clear filters
+            {t('audit.clearFilters')}
           </Button>
           <Button
             onClick={handleExport}
             className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
           >
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            {t('audit.exportCsv')}
           </Button>
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Audit Logs</h3>
+          <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('audit.title')}</h3>
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            Total: {totalLogs} records
+            {t('audit.totalRecords', { count: totalLogs })}
           </span>
         </div>
       </div>
@@ -281,7 +250,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {logs.length === 0 ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              No audit logs found
+              {t('audit.noLogsFound')}
             </div>
           ) : (
             logs.map((log) => {
@@ -297,7 +266,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                       {log.user_avatar ? (
                         <img
                           src={log.user_avatar}
-                          alt={log.user_name || 'User'}
+                          alt={log.user_name || t('common.unknownUser')}
                           className="w-10 h-10 rounded-full"
                         />
                       ) : (
@@ -311,16 +280,16 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                       <div className="flex items-center space-x-2">
                         <ActionIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                          {actionLabels[log.action] || log.action}
+                          {t(`audit.actions.${log.action}`)}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {entityTypeLabels[log.entity_type] || log.entity_type}
+                          {t(`audit.entities.${log.entity_type}`)}
                         </span>
                       </div>
 
                       <div className="mt-1">
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {log.user_name || log.username || 'Unknown user'}
+                          {log.user_name || log.username || t('common.unknownUser')}
                         </span>
                         {log.user_email && (
                           <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
@@ -357,13 +326,13 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
               variant="secondary"
             >
               {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                'Load more'
-              )}
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('buttons.loading')}
+                  </>
+                ) : (
+                  t('buttons.loadMore')
+                )}
             </Button>
           </div>
         )}
@@ -380,7 +349,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Log Details</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t('audit.logDetails')}</h3>
                 <button
                   onClick={() => setSelectedLog(null)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -391,22 +360,22 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ID</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.id')}</label>
                   <p className="text-gray-900 dark:text-white">{selectedLog.id}</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Action</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.actionLabel')}</label>
                   <p className="text-gray-900 dark:text-white">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getActionColor(selectedLog.action)}`}>
-                      {actionLabels[selectedLog.action] || selectedLog.action}
+                      {t(`audit.actions.${selectedLog.action}`)}
                     </span>
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Entity Type</label>
-                  <p className="text-gray-900 dark:text-white">{entityTypeLabels[selectedLog.entity_type] || selectedLog.entity_type}</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.entityTypeLabel')}</label>
+                  <p className="text-gray-900 dark:text-white">{t(`audit.entities.${selectedLog.entity_type}`)}</p>
                 </div>
 
                 {selectedLog.entity_id && (
@@ -417,12 +386,12 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                 )}
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">User</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.userLabel')}</label>
                   <div className="flex items-center space-x-3 mt-1">
-                    {selectedLog.user_avatar ? (
+                      {selectedLog.user_avatar ? (
                       <img
                         src={selectedLog.user_avatar}
-                        alt={selectedLog.user_name || 'User'}
+                        alt={selectedLog.user_name || t('common.unknownUser')}
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
@@ -432,7 +401,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                     )}
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {selectedLog.user_name || selectedLog.username || 'Unknown user'}
+                        {selectedLog.user_name || selectedLog.username || t('common.unknownUser')}
                       </p>
                       {selectedLog.user_email && (
                         <p className="text-sm text-gray-500 dark:text-gray-400">{selectedLog.user_email}</p>
@@ -442,7 +411,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.dateLabel')}</label>
                   <p className="text-gray-900 dark:text-white">
                     {new Date(selectedLog.created_at).toLocaleString('en-US', {
                       year: 'numeric',
@@ -457,7 +426,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectId }) => 
 
                 {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Additional Details</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('audit.additionalDetailsLabel')}</label>
                     <pre className="mt-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-md text-sm overflow-x-auto text-gray-900 dark:text-white">
                       {JSON.stringify(selectedLog.details, null, 2)}
                     </pre>

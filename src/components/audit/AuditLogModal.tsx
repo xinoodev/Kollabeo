@@ -4,6 +4,7 @@ import { FileText, BarChart3 } from 'lucide-react';
 import { AuditLogViewer } from './AuditLogViewer';
 import { AuditStats } from './AuditStats';
 import { Project } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AuditLogModalProps {
   isOpen: boolean;
@@ -18,18 +19,19 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({
   onClose,
   project,
 }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('logs');
 
   const tabs: Array<{ id: TabType; label: string; icon: React.ElementType }> = [
-    { id: 'logs', label: 'Logs', icon: FileText },
-    { id: 'stats', label: 'Statistics', icon: BarChart3 },
+    { id: 'logs', label: t('audit.tabs.logs'), icon: FileText },
+    { id: 'stats', label: t('audit.tabs.stats'), icon: BarChart3 },
   ];
 
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Audit Log - ${project.name}`}
+      title={`${t('audit.title')} - ${project.name}`}
       size="xl"
     >
       <div className="mb-4">

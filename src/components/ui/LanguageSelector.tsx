@@ -13,7 +13,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ showLabels =
 
   return (
     <div className="mt-2">
-      <label className="sr-only">{t('language.label')}</label>
+      <label className={showLabels ? 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' : 'sr-only'}>{t('language.label')}</label>
       <select
         value={lang}
         onChange={(e) => setLang(e.target.value as 'en' | 'es')}

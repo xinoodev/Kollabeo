@@ -3,6 +3,7 @@ import React from 'react';
 import { Task } from '../../types';
 import { Calendar, MessageSquare, User, Tag, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -85,6 +86,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   };
 
   const commentsCount = task.comments_count ?? 0;
+  const { t } = useLanguage();
 
   return (
     <div
@@ -104,7 +106,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           </h3>
           <span className={`px-2 py-1 text-xs rounded-full font-medium flex items-center gap-1 ${PRIORITY_COLORS[task.priority]}`}>
             <AlertCircle className="h-3 w-3" />
-            {task.priority}
+            {t(`priority.${task.priority}`)}
           </span>
         </div>
 
@@ -168,7 +170,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           }
         `}</style>
 
-        {task.tags.length > 0 && (
+            {task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {task.tags.slice(0, 3).map((tag, index) => (
               <span
@@ -180,7 +182,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               </span>
             ))}
             {task.tags.length > 3 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">+{task.tags.length - 3} more</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t('tasks.more', { count: task.tags.length - 3 })}</span>
             )}
           </div>
         )}
@@ -197,7 +199,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               <div className="flex items-center space-x-1">
                 <User className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                 <span className="text-green-600 dark:text-green-400">
-                  {task.assignee_name || 'Assigned'}
+                    {task.assignee_name || t('tasks.assigned')}
                 </span>
               </div>
             )}

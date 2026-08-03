@@ -5,6 +5,7 @@ import { Input } from '../ui/Input';
 import { Project, ProjectMember } from '../../types';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { UserPlus, Trash2, Shield, User as UserIcon, Crown, Link2, Copy, Check, RefreshCw } from 'lucide-react';
 
 interface MembersModalProps {
@@ -30,6 +31,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   const [linkLoading, setLinkLoading] = useState(false);
   const [showInviteLink, setShowInviteLink] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const currentUserMember = members.find(m => m.user_id === user?.id);
   const isOwner = project.owner_id === user?.id;
@@ -73,7 +75,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
       setInvitationLink(data.link);
       setSuccess(data.message);
     } catch (error: any) {
-      setError(error.message || 'Error creating invitation link');
+      setError(error.message || t('members.inviteError'));
     } finally {
       setLinkLoading(false);
     }
@@ -88,7 +90,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
       setInvitationLink(data.link);
       setSuccess(data.message);
     } catch (error: any) {
-      setError(error.message || 'Error generating new invitation link');
+      setError(error.message || t('members.inviteError'));
     } finally {
       setLinkLoading(false);
     }
@@ -104,16 +106,16 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const handleDeactivateLink = async () => {
-    if (!window.confirm('Are you sure you want to deactivate this invitation link?')) {
+    if (!window.confirm(t('members.confirmDeactivateLink'))) {
       return;
     }
     setLinkLoading(true);
     try {
       await apiClient.deactivateInvitationLink(project.id);
       setInvitationLink(null);
-      setSuccess('Invitation link deactivated');
+      setSuccess(t('members.invitationDeactivated'));
     } catch (error: any) {
-      setError(error.message || 'Error deactivating link');
+      setError(error.message || t('members.inviteError'));
     } finally {
       setLinkLoading(false);
     }
@@ -139,7 +141,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
         setSuccess(`Invitation sent successfully to ${invitedEmail}! The user will receive an email to join the project.`);
       }
     } catch (error: any) {
-      setError(error.message || 'Error sending invitation');
+      setError(error.message || t('members.inviteError'));
     } finally {
       setLoading(false);
     }
@@ -190,7 +192,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Project Members" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('members.title')} size="lg">
       <div className="space-y-6">
         {isAdmin && (
           <div className="space-y-4">
@@ -205,7 +207,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                 }`}
               >
                 <UserPlus className="h-4 w-4" />
-                <span>Invite by Email</span>
+                <span>{t('members.inviteByEmail')}</span>
               </button>
               <button
                 type="button"
@@ -217,7 +219,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                 }`}
               >
                 <Link2 className="h-4 w-4" />
-                <span>Invitation Link</span>
+                <span>{t('members.invitationLinkLabel')}</span>
               </button>
             </div>
 
@@ -240,21 +242,21 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     rel="noopener noreferrer"
                     className="mt-2 inline-block text-xs underline hover:no-underline"
                   >
-                    Preview email
+                    {t('members.previewEmail')}
                   </a>
                 )}
               </div>
             )}
 
             <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              An invitation email will be sent to the user. They must accept the invitation to join the project.
+              {t('members.inviteInfo')}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
                 <Input
                   type="email"
-                  placeholder="Email address"
+                  placeholder={t('members.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -265,19 +267,19 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                 onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
+                <option value="member">{t('members.roleOptions.member')}</option>
+                <option value="admin">{t('members.roleOptions.admin')}</option>
               </select>
             </div>
 
             <Button type="submit" disabled={loading} fullWidth>
-              {loading ? 'Sending Invitation...' : 'Send Invitation'}
+              {loading ? t('members.sendingInvitation') : t('members.sendInvitation')}
             </Button>
           </form>
             ) : (
               <div className="space-y-4">
                 <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                  Create a shareable link that anyone can use to join the project. The link expires after 7 days.
+                  {t('members.invitationLinkInfo')}
                 </div>
 
                 {error && (
@@ -315,7 +317,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     </div>
 
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Expires: {new Date(invitationLink.expires_at).toLocaleString()}
+                      {t('members.expires', { date: new Date(invitationLink.expires_at).toLocaleString() })}
                     </div>
 
                     <div className="flex gap-2">
@@ -327,7 +329,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                         className="flex-1"
                       >
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        Generate New Link
+                        {t('members.generateNewLink')}
                       </Button>
                       <Button
                         type="button"
@@ -336,7 +338,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                         variant="outline"
                         className="flex-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
-                        Deactivate Link
+                        {t('members.deactivateLink')}
                       </Button>
                     </div>
                   </div>
@@ -347,7 +349,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     disabled={linkLoading}
                     fullWidth
                   >
-                    {linkLoading ? 'Creating Link...' : 'Create Invitation Link'}
+                    {linkLoading ? t('members.creatingLink') : t('members.createInvitationLink')}
                   </Button>
                 )}
               </div>
@@ -357,7 +359,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
 
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Members ({members.length})
+            {t('members.title')} ({members.length})
           </h4>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -385,7 +387,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {member.username || member.full_name}
                       {member.user_id === user?.id && (
-                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(You)</span>
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({t('members.youShort')})</span>
                       )}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -400,13 +402,13 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                         onChange={(e) => handleUpdateRole(member.id, e.target.value as 'admin' | 'member')}
                         className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
                       >
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
+                        <option value="member">{t('members.roleOptions.member')}</option>
+                        <option value="admin">{t('members.roleOptions.admin')}</option>
                       </select>
                     ) : (
                       <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(member.role)}`}>
                         {getRoleIcon(member.role)}
-                        <span className="capitalize">{member.role}</span>
+                        <span>{t(`members.roleLabels.${member.role}`)}</span>
                       </span>
                     )}
 
@@ -414,7 +416,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                       <button
                         onClick={() => handleRemoveMember(member.id)}
                         className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200"
-                        title="Remove member"
+                        title={t('members.removeMember')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -424,9 +426,9 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                       <button
                         onClick={() => handleRemoveMember(member.id)}
                         className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200 text-xs"
-                        title="Leave project"
+                        title={t('members.leave')}
                       >
-                        Leave
+                        {t('members.leave')}
                       </button>
                     )}
                   </div>
@@ -438,9 +440,9 @@ export const MembersModal: React.FC<MembersModalProps> = ({
 
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p><strong>Owner:</strong> Full control over the project</p>
-            <p><strong>Admin:</strong> Can manage members and project settings</p>
-            <p><strong>Member:</strong> Can view and edit tasks</p>
+            <p><strong>{t('members.roles.ownerLabel')}</strong> {t('members.roles.ownerDesc')}</p>
+            <p><strong>{t('members.roles.adminLabel')}</strong> {t('members.roles.adminDesc')}</p>
+            <p><strong>{t('members.roles.memberLabel')}</strong> {t('members.roles.memberDesc')}</p>
           </div>
         </div>
       </div>

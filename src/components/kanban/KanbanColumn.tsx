@@ -6,6 +6,7 @@ import { TaskCard } from './TaskCard';
 import React, { useEffect, useState, useRef } from 'react';
 import { Plus, MoreVertical, CreditCard as Edit2, Trash2, GripVertical } from 'lucide-react';
 import { Task, TaskColumn } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface KanbanColumnProps {
   column: TaskColumn;
@@ -26,6 +27,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const {
     attributes,
@@ -88,7 +90,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             <button
               {...listeners}
               className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Drag to reorder column"
+              title={t('kanban.dragToReorder')}
             >
               <GripVertical className="h-5 w-5" />
             </button>
@@ -105,7 +107,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             <button
               onClick={() => onAddTask(column.id)}
               className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              title="Add task"
+              title={t('kanban.addTask')}
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -113,14 +115,14 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Column options"
+                title={t('kanban.columnOptions')}
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
               {showMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="py-1">
-                    <button
+                      <button
                       onClick={() => {
                         onEditColumn(column);
                         setShowMenu(false);
@@ -128,7 +130,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                     >
                       <Edit2 className="mr-2 h-4 w-4" />
-                      Edit column
+                      {t('kanban.editColumn')}
                     </button>
                     <button
                       onClick={() => {
@@ -138,7 +140,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete column
+                      {t('kanban.deleteColumn')}
                     </button>
                   </div>
                 </div>

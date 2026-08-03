@@ -19,6 +19,7 @@ import { Project, TaskColumn, Task } from '../../types';
 import { Button } from '../ui/Button';
 import { TaskCard } from './TaskCard';
 import { apiClient } from '../../lib/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface KanbanBoardProps {
   project: Project;
@@ -48,6 +49,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [activeColumn, setActiveColumn] = useState<TaskColumn | null>(null);
   const [originalColumnId, setOriginalColumnId] = useState<number | null>(null);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -257,7 +259,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         <div className="flex items-center justify-between">
           <Button onClick={onAddColumn} size="sm" variant="secondary">
             <Plus className="mr-2 h-4 w-4" />
-            Add Column
+            {t('kanban.addColumn')}
           </Button>
         </div>
       )}

@@ -7,6 +7,7 @@ import { Task, TaskCollaborator, ProjectMember } from '../../types';
 import { apiClient } from '../../lib/api';
 import { X, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -16,10 +17,10 @@ interface EditTaskModalProps {
 }
 
 const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-700' },
-  { value: 'medium', label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'High', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-700' },
+  { value: 'low', label: 'priority.low', color: 'bg-gray-100 text-gray-700' },
+  { value: 'medium', label: 'priority.medium', color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: 'priority.high', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'urgent', label: 'priority.urgent', color: 'bg-red-100 text-red-700' },
 ] as const;
 
 export const EditTaskModal: React.FC<EditTaskModalProps> = ({
@@ -39,6 +40,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const [showAddCollaborator, setShowAddCollaborator] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (task) {
@@ -80,7 +82,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
       setShowAddCollaborator(false);
       setSelectedMemberId(null);
     } catch (error: any) {
-      alert(error.message || 'Error adding collaborator');
+      alert(error.message || t('members.addError'));
     }
   };
 
@@ -89,7 +91,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
       await apiClient.removeCollaborator(collaboratorId);
       await loadCollaborators();
     } catch (error: any) {
-      alert(error.message || 'Error removing collaborator');
+      alert(error.message || t('members.removeError'));
     }
   };
 
@@ -130,24 +132,24 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
   if (!task) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Edit Task" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('tasks.editTitle')} size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
-          label="Task Title"
+          label={t('tasks.title')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter task title"
+          placeholder={t('tasks.enterTitle')}
           required
         />
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description (optional)
+            {t('tasks.descriptionOptional')}
           </label>
           <RichTextEditor
             value={description}
             onChange={setDescription}
-            placeholder="Enter task description"
+            placeholder={t('tasks.enterDescription')}
             minHeight="150px"
             checkboxStates={task.checkbox_states}
           />
@@ -156,7 +158,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Priority
+              {t('tasks.priority')}
             </label>
             <select
               value={priority}
@@ -165,7 +167,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
             >
               {PRIORITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </option>
               ))}
             </select>
@@ -180,17 +182,17 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
         </div>
 
         <Input
-          label="Tags (optional)"
+          label={t('tasks.tagsOptional')}
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          placeholder="Enter tags separated by commas"
+          placeholder={t('tasks.enterTagsPlaceholder')}
         />
 
         {task?.assignee_id === user?.id && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Collaborators
+                {t('members.title')}
               </label>
               <Button
                 type="button"
@@ -198,7 +200,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 onClick={() => setShowAddCollaborator(!showAddCollaborator)}
               >
                 <UserPlus className="w-4 h-4 mr-1" />
-                Add
+                {t('members.add')}
               </Button>
             </div>
 
@@ -209,7 +211,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   onChange={(e) => setSelectedMemberId(Number(e.target.value))}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="">Select a member</option>
+                  <option value="">{t('members.select')}</option>
                   {projectMembers
                     .filter(m => m.user_id !== task?.assignee_id && !collaborators.some(c => c.user_id === m.user_id))
                     .map((member) => (
@@ -223,7 +225,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   onClick={handleAddCollaborator}
                   disabled={!selectedMemberId}
                 >
-                  Add
+                  {t('members.add')}
                 </Button>
               </div>
             )}
@@ -261,7 +263,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
               ))}
               {collaborators.length === 0 && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
-                  No collaborators yet
+                  {t('members.none')}
                 </p>
               )}
             </div>
@@ -270,10 +272,10 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
         <div className="flex space-x-3 pt-4">
           <Button type="button" variant="secondary" onClick={handleClose}>
-            Cancel
+            {t('buttons.cancel')}
           </Button>
           <Button type="submit" disabled={loading || !title.trim()}>
-            {loading ? 'Updating...' : 'Update Task'}
+            {loading ? t('tasks.updating') : t('tasks.update')}
           </Button>
         </div>
       </form>

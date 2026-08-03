@@ -4,6 +4,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ForgotPasswordModalProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const { requestPasswordReset } = useAuth();
+    const { t } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,7 +32,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                 setSuccess(true);
             }
         } catch (error: any) {
-            setError(error.message || 'Failed to send password reset email');
+            setError(error.message || t('auth.resetRequestFailed'));
         } finally {
             setLoading(false);
         }
@@ -44,20 +46,20 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title="Reset Password">
+        <Modal isOpen={isOpen} onClose={handleClose} title={t('auth.resetPasswordTitle')}>
             {success ? (
                 <div className="text-center py-6">
                     <div className="mx-auto h-16 w-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
                         <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Check your email
+                        {t('auth.checkYourEmailTitle')}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-6">
-                        We've sent password reset instructions to <strong>{email}</strong>
+                        {t('auth.sentInstructions', { email })}
                     </p>
                     <Button onClick={handleClose} className="w-full">
-                        Close
+                        {t('buttons.close')}
                     </Button>
                 </div>
             ) : (
@@ -66,7 +68,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                         <div className="flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                             <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                             <p className="text-sm text-blue-700 dark:text-blue-300">
-                                Enter your email address and we'll send you instructions to reset your password.
+                                {t('auth.resetPasswordInfo')}
                             </p>
                         </div>
 
@@ -77,12 +79,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                         )}
 
                         <Input
-                            label="Email"
+                            label={t('auth.email')}
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            placeholder="Enter your email address"
+                            placeholder={t('auth.enterEmail')}
                             autoFocus
                         />
                     </div>
@@ -95,7 +97,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                             disabled={loading}
                             className="flex-1"
                         >
-                            Cancel
+                            {t('buttons.cancel')}
                         </Button>
                         <Button
                             type="submit"
@@ -105,12 +107,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending...
+                                    {t('common.sending')}
                                 </>
                             ) : (
                                 <>
                                     <Mail className="mr-2 h-5 w-5" />
-                                    Send Reset Link
+                                    {t('buttons.resetPassword')}
                                 </>
                             )}
                         </Button>

@@ -5,6 +5,7 @@ import { Input } from '../ui/Input'
 import { Project } from '../../types'
 import { apiClient } from '../../lib/api'
 import { Trash2, AlertTriangle } from 'lucide-react'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 interface ProjectSettingsModalProps {
     isOpen: boolean;
@@ -28,6 +29,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     const [error, setError] = useState('');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const { t } = useLanguage();
 
     const colorOptions = [
         { value: '#EF4444', label: 'Red' },
@@ -53,7 +55,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             onUpdate(updatedProject);
             onClose();
         } catch (error: any) {
-            setError(error.message || 'Error updating project');
+            setError(error.message || t('projects.updateFailed'));
         } finally {
             setLoading(false);
         }
@@ -61,7 +63,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
     const handleDelete = async () => {
         if (deleteConfirmText !== project.name) {
-            setError('Project name does not match');
+            setError(t('projects.deleteNameMismatch'));
             return;
         }
 
@@ -73,7 +75,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             onDelete();
             onClose();
         } catch (error: any) {
-            setError(error.message || 'Error deleting project');
+            setError(error.message || t('projects.deleteFailed'));
         } finally {
             setLoading(false);
         }
@@ -94,7 +96,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title="Project Settings" size='lg'>
+        <Modal isOpen={isOpen} onClose={handleClose} title={t('projects.settingsTitle')} size='lg'>
             <div className="space-y-6">
                 {error && (
                     <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
@@ -104,26 +106,26 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Project Name
-                        </label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {t('projects.projectName')}
+                            </label>
                         <Input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter project name"
+                                placeholder={t('projects.enterProjectName')}
                             required
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Description
+                            {t('projects.descriptionOptional')}
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Enter project description"
+                            placeholder={t('projects.enterProjectDescription')}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                             rows={3}
                         />
@@ -131,7 +133,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Project Color
+                            {t('projects.projectColor')}
                         </label>
                         <div className="grid grid-cols-7 gap-2">
                             {colorOptions.map((option) => (
@@ -152,10 +154,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
                     <div className="flex justify-end gap-2 pt-4">
                         <Button type="button" variant="secondary" onClick={handleClose}>
-                            Cancel
+                            {t('buttons.cancel')}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading? 'Saving...' : 'Save Changes'}
+                            {loading ? t('buttons.loading') : t('projects.saveChanges')}
                         </Button>
                     </div>
                 </form>
@@ -165,15 +167,15 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                         <div>
                             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                                Danger Zone
+                                {t('projects.dangerZone')}
                             </h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Deleting a projects is permanent and cannot be undone. All tasks, columns, and data will be lost.
+                                {t('projects.deleteWarning')}
                             </p>
                         </div>
                     </div>
 
-                    {!showDeleteConfirm ? (
+                        {!showDeleteConfirm ? (
                         <Button
                             type="button"
                             variant="secondary"
@@ -181,18 +183,28 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                             className="w-full !bg-red-50 !text-red-600 hover:!bg-red-100 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/30"
                         >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Project
+                            {t('projects.deleteProject')}
                         </Button>
                     ) : (
                         <div className="space-y-3">
                             <p className="text-sm text-gray-900 dark:text-white font-medium">
-                                Type <span className="font-bold text-red-600 dark:text-red-400">{project.name}</span> to confirm deletion:
+                                {(() => {
+                                    const prompt = t('projects.confirmDeletePrompt', { name: project.name });
+                                    const parts = prompt.split(project.name);
+                                    return (
+                                        <>
+                                            {parts[0]}
+                                            <span className="font-bold text-red-600 dark:text-red-400">{project.name}</span>
+                                            {parts[1]}
+                                        </>
+                                    );
+                                })()}
                             </p>
                             <Input 
                                 type="text"
                                 value={deleteConfirmText}
                                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                                placeholder="Enter project name"
+                                placeholder={t('projects.enterProjectName')}
                             />
                             <div className="flex gap-2">
                                 <Button
@@ -205,14 +217,14 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                                     }}
                                     fullWidth
                                 >
-                                    Cancel
+                                    {t('buttons.cancel')}
                                 </Button>
                                 <Button 
                                     type="button"
                                     onClick={handleDelete}
                                     disabled={loading || deleteConfirmText !== project.name}
                                 >
-                                    {loading ? 'Deleting...' : 'Delete Project'}
+                                    {loading ? t('buttons.loading') : t('projects.deleteProject')}
                                 </Button>
                             </div>
                         </div>

@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { EditTaskModal } from './EditTaskModal';
 import { TaskComments } from './TaskComments';
 import { extractYouTubeLinks, YouTubeVideoInfo } from '../../utils/youtube';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoInfo[]>([]);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const { user } = useAuth();
+  const { t } = useLanguage();
   const descriptionRef = useRef<HTMLDivElement>(null);
   const isUpdatingCheckboxes = useRef(false);
 
@@ -178,7 +180,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    if (!confirm(t('tasks.confirmDelete'))) return;
 
     setLoading(true);
     try {
@@ -210,7 +212,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           <div>
             <span className={`px-3 py-1 text-sm rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
               <AlertCircle className="inline w-4 h-4 mr-1" />
-              {task.priority} priority
+              {t(`priority.${task.priority}`)} {t('tasks.priority')}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -221,7 +223,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               disabled={loading}
             >
               <Pencil className="w-4 h-4 mr-1" />
-              Edit
+              {t('buttons.edit')}
             </Button>
             
             {!task.assignee_id ? (
@@ -232,7 +234,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 disabled={assignLoading}
               >
                 <User className="w-4 h-4 mr-1" />
-                {assignLoading ? 'Assigning...' : 'Assign to me'}
+                {assignLoading ? t('tasks.assigning') : t('tasks.assignToMe')}
               </Button>
             ) : task.assignee_id === user?.id ? (
               <Button
@@ -242,12 +244,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 disabled={assignLoading}
               >
                 <UserCheck className="w-4 h-4 mr-1" />
-                {assignLoading ? 'Unassigning...' : 'Unassign'}
+                {assignLoading ? t('tasks.unassigning') : t('tasks.unassign')}
               </Button>
             ) : (
               <div className="flex items-center px-3 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
                 <UserCheck className="w-4 h-4 mr-1" />
-                Assigned to {task.assignee_name || 'Someone'}
+                {t('tasks.assignedTo', { name: task.assignee_name || t('tasks.someone') })}
               </div>
             )}
             
@@ -259,14 +261,14 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 disabled={loading}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Delete
+                {t('buttons.delete')}
               </Button>
             )}
           </div>
 
           {task.description && (
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">{t('tasks.descriptionHeading')}</h4>
               <div
                 ref={descriptionRef}
                 className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none task-card-content task-description-scroll"
@@ -277,7 +279,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
 
           {youtubeVideos.length > 0 && (
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Videos</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('tasks.videos')}</h4>
               <div className="space-y-4">
                 {youtubeVideos.map((video) => (
                   <div key={video.videoId} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
@@ -404,7 +406,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
                   <Calendar className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                  Due Date
+                  {t('tasks.dueDateHeading')}
                 </h4>
                 <p className="text-gray-700 dark:text-gray-300">
                   {format(new Date(task.due_date), 'PPP')}
@@ -416,7 +418,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
                   <Tag className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                  Tags
+                  {t('tasks.tagsHeading')}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {task.tags.map((tag, index) => (
@@ -434,7 +436,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
                 <User className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                Assigned to
+                {t('tasks.assignedToHeading')}
               </h4>
               {task.assignee_id ? (
                 <div className="flex items-center space-x-2">
@@ -446,7 +448,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        {task.assignee_name || "Unknown User"}
+                        {task.assignee_name || t('common.unknownUser')}
                       </span>
                     </>
                   ) : (
@@ -455,20 +457,20 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       <span className="text-gray-700 dark:text-gray-300">
-                        {task.assignee_name || "Unknown User"}
+                        {task.assignee_name || t('common.unknownUser')}
                       </span>
                     </>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No one assigned</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('tasks.noOneAssigned')}</p>
               )}
             </div>
 
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
                 <Users className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
-                Collaborators ({collaborators.length})
+                {t('members.title')} ({collaborators.length})
               </h4>
               {collaborators.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
@@ -488,14 +490,14 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                           <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         </div>
                       )}
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {collaborator.username || collaborator.full_name || collaborator.email || "Unknown User"}
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {collaborator.username || collaborator.full_name || collaborator.email || t('common.unknownUser')}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No collaborators</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('members.none')}</p>
               )}
             </div>
           </div>
@@ -506,9 +508,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
 
           <div className="border-t pt-4">
             <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Created {format(new Date(task.created_at), 'PPp')}
+              {t('tasks.created')} {format(new Date(task.created_at), 'PPp')}
               {task.updated_at !== task.created_at && (
-                <span> • Updated {format(new Date(task.updated_at), 'PPp')}</span>
+                <span> • {t('tasks.updated')} {format(new Date(task.updated_at), 'PPp')}</span>
               )}
             </p>
           </div>

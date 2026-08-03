@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
           <div className="flex items-center space-x-4">
             <Button onClick={onCreateProject} size="sm">
               <Plus className="mr-2 h-4 w-4" />
-              New Project
+              {t('header.newProject')}
             </Button>
 
             <div className="relative" data-profile-dropdown>

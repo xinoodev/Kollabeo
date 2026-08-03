@@ -21,6 +21,7 @@ import { apiClient } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AuditStatsProps {
   projectId: number;
@@ -28,25 +29,13 @@ interface AuditStatsProps {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-// Función helper para formatear los nombres de entidades
-const formatEntityType = (entityType: string): string => {
-  const labels: Record<string, string> = {
-    'task': 'Tasks',
-    'project_member': 'Members',
-    'invitation': 'Invitations',
-    'task_collaborator': 'Collaborators',
-    'column': 'Columns',
-    'project': 'Projects',
-  };
-  return labels[entityType] || entityType;
-};
-
 export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
   const { isDark } = useTheme();
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     loadStats();
@@ -95,7 +84,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
   if (error || !stats) {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-        {error || 'Could not load statistics'}
+        {error || t('audit.noDataAvailable')}
       </div>
     );
   }
@@ -105,7 +94,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
 
   // Preparar los datos para el gráfico de pastel
   const entityTypeData = stats.byEntityType.map(item => ({
-    name: formatEntityType(item.entity_type),
+    name: t(`audit.entities.${item.entity_type}`),
     value: parseInt(item.count.toString()),
     entity_type: item.entity_type,
   }));
@@ -115,12 +104,12 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Date Range</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('audit.dateRange')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Start date
+              {t('audit.startDate')}
             </label>
             <Input
               type="date"
@@ -130,7 +119,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              End date
+              {t('audit.endDate')}
             </label>
             <Input
               type="date"
@@ -144,7 +133,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
           onClick={() => setDateRange({})}
           className="mt-4"
         >
-          Clear filters
+          {t('audit.clearFilters')}
         </Button>
       </div>
 
@@ -152,7 +141,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Actions</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('audit.totalActions')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {stats.byAction.reduce((sum, item) => sum + parseInt(item.count.toString()), 0)}
               </p>
@@ -166,7 +155,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('audit.activeUsers')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {stats.byUser.length}
               </p>
@@ -180,7 +169,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Entity Types</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('audit.entityTypes')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {stats.byEntityType.length}
               </p>
@@ -193,12 +182,12 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Most Frequent Actions</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('audit.mostFrequentActions')}</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={topActions}>
+          <BarChart data={topActions.map(a => ({ ...a, label: t(`audit.actions.${a.action}`) }))}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
             <XAxis 
-              dataKey="action" 
+              dataKey="label" 
               angle={-45}
               textAnchor="end"
               height={100}
@@ -212,13 +201,13 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
               itemStyle={tooltipStyles.itemStyle}
             />
             <Legend />
-            <Bar dataKey="count" fill="#3B82F6" name="Count" />
+            <Bar dataKey="count" fill="#3B82F6" name={t('audit.count')} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribution by Entity Type</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('audit.entityTypes')}</h3>
         {entityTypeData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -243,7 +232,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
                 contentStyle={tooltipStyles.contentStyle}
                 labelStyle={tooltipStyles.labelStyle}
                 itemStyle={tooltipStyles.itemStyle}
-                formatter={(value: number) => [`${value} actions`, 'Count']}
+                formatter={(value: number) => [`${value} ${t('audit.actionsLabel')}`, t('audit.count')]}
               />
               <Legend 
                 verticalAlign="bottom" 
@@ -254,13 +243,13 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
           </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-            No data available
+            {t('audit.noDataAvailable')}
           </div>
         )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Most Active Users</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('audit.mostActiveUsers')}</h3>
         <div className="space-y-4">
           {topUsers.map((user, index) => (
             <div key={user.user_id} className="flex items-center space-x-4">
@@ -295,7 +284,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
                 <p className="text-lg font-bold text-gray-900 dark:text-white">
                   {user.action_count}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">actions</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('audit.actionsLabel')}</p>
               </div>
             </div>
           ))}
@@ -303,18 +292,18 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Activity by Day (Last 30 days)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('audit.activityByDay')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={stats.activityByDay.reverse()}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
             <XAxis 
               dataKey="date" 
-              tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              tickFormatter={(date) => new Date(date).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' })}
               stroke="#6B7280"
             />
             <YAxis stroke="#6B7280" />
             <Tooltip 
-              labelFormatter={(date) => new Date(date).toLocaleDateString('en-US')}
+              labelFormatter={(date) => new Date(date).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US')}
               contentStyle={tooltipStyles.contentStyle}
               labelStyle={tooltipStyles.labelStyle}
               itemStyle={tooltipStyles.itemStyle}
@@ -325,7 +314,7 @@ export const AuditStats: React.FC<AuditStatsProps> = ({ projectId }) => {
               dataKey="count" 
               stroke="#3B82F6" 
               strokeWidth={2}
-              name="Actions"
+              name={t('audit.actionsLabel')}
               dot={{ fill: '#3B82F6' }}
             />
           </LineChart>

@@ -14,6 +14,7 @@ import { ProjectChat } from '../components/projects/ProjectChat';
 import { io, Socket } from 'socket.io-client';
 import { ArrowLeft, Users, Settings, FileText, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { apiClient } from '../lib/api';
 
 interface ProjectViewProps {
@@ -37,6 +38,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   const [selectedColumn, setSelectedColumn] = useState<TaskColumn | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -175,7 +177,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
               className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 mb-7"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Projects
+              {t('buttons.backToProjects')}
             </button>
             
             <div className="flex items-center justify-between mb-7">
@@ -197,7 +199,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
                 >
                   <Users className="h-4 w-4" />
-                  <span>Members</span>
+                  <span>{t('members.title')}</span>
                 </button>
                 {canManageProject() && (
                   <button
@@ -206,7 +208,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                     title="Ver auditoría del proyecto"
                   >
                     <FileText className="h-4 w-4" />
-                    <span>Audit Log</span>
+                    <span>{t('audit.title')}</span>
                   </button>
                 )}
                 {isOwner && (
@@ -215,7 +217,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
                     className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors duration-200"
                   >
                     <Settings className="h-4 w-4" />
-                    <span>Settings</span>
+                    <span>{t('projects.settings')}</span>
                   </button>
                 )}
               </div>

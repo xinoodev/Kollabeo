@@ -3,30 +3,30 @@ import { AuditLogViewer } from '../components/audit/AuditLogViewer';
 import { AuditStats } from '../components/audit/AuditStats';
 import { useParams, Navigate } from 'react-router-dom';
 import { FileText, BarChart3 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type TabType = 'logs' | 'stats';
 
 export const AuditPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [activeTab, setActiveTab] = useState<TabType>('logs');
+  const { t } = useLanguage();
 
   if (!projectId) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const tabs: Array<{ id: TabType; label: string; icon: React.ElementType }> = [
-    { id: 'logs', label: 'Logs', icon: FileText },
-    { id: 'stats', label: 'Statistics', icon: BarChart3 },
+    { id: 'logs', label: t('audit.tabs.logs'), icon: FileText },
+    { id: 'stats', label: t('audit.tabs.stats'), icon: BarChart3 },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Project Audit</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            View and analyze all actions performed in the project
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('audit.pageTitle')}</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{t('audit.description')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">

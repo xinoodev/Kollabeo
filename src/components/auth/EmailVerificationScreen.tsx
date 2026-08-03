@@ -3,6 +3,7 @@ import { Button } from '../ui/Button';
 import { ThemeSelector } from '../ui/ThemeSelector';
 import { useAuth } from '../../contexts/AuthContext';
 import { Mail, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface EmailVerificationScreenProps {
   email: string;
@@ -17,6 +18,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const { resendVerification } = useAuth();
+  const { t } = useLanguage();
 
   const handleResendEmail = async () => {
     setLoading(true);
@@ -92,16 +94,16 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
                 className="w-full"
               >
                 {loading ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Resend verification email
-                  </>
-                )}
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t('common.sending')}
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {t('auth.resendVerification')}
+                    </>
+                  )}
               </Button>
 
               <Button
@@ -109,7 +111,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
                 variant="ghost"
                 className="w-full"
               >
-                Back to sign in
+                {t('buttons.backToSignIn')}
               </Button>
             </div>
           </div>

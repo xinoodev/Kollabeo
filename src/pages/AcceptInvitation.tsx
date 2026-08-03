@@ -1,5 +1,6 @@
 
 import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import { Loader, CheckCircle, XCircle, Mail } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { apiClient } from "../lib/api";
@@ -16,6 +17,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
     onGoToDashboard
 }) => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [status, setStatus] = useState<"loading" | "success" | "error" | "needs-auth" | "already-member">("loading");
     const [message, setMessage] = useState("");
     const [projectId, setProjectId] = useState<number | null>(null);
@@ -30,7 +32,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
 
         if (!emailToken && !linkToken) {
             setStatus("error");
-            setMessage("Invalid invitation link");
+            setMessage(t('invitations.invalidLink'));
             return;
         }
 
@@ -42,7 +44,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
 
         if (!user) {
             setStatus("needs-auth");
-            setMessage('Please log in to accept this invitation');
+            setMessage(t('invitations.loginToAccept'));
             return;
         }
 
@@ -70,13 +72,8 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                     setProjectName(result.projectName);
                 }
             } catch (error: any) {
-                if (error.shouldRedirect) {
-                    setStatus("error");
-                    setMessage(error.message || "Failed to accept invitation");
-                } else {
-                    setStatus("error");
-                    setMessage(error.message || "Failed to accept invitation");
-                }
+                setStatus("error");
+                setMessage(error.message || t('invitations.acceptFailed'));
             }
         };
 
@@ -126,16 +123,16 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                 <div className="text-center">
                     {status === "loading" && (
                         <>
-                            <div className="flex justify-center mb-4">
-                                <Loader className="h-12 w-12 text-blue-600 dark:text-blue-400 animate-spin" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                Processing Invitation
-                            </h2>
-                            <p className="text-gray-600 dark:text-gray-400">
-                                Please wait while we process your invitation...
-                            </p>
-                        </>
+                                    <div className="flex justify-center mb-4">
+                                        <Loader className="h-12 w-12 text-blue-600 dark:text-blue-400 animate-spin" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                        {t('invitations.processingTitle')}
+                                    </h2>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                        {t('invitations.processingInfo')}
+                                    </p>
+                                </>
                     )}
 
                     {status === "success" && (
@@ -143,12 +140,12 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                             <div className="flex justify-center mb-4">
                                 <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400" />
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                Invitation Accepted
-                            </h2>
-                            <p className="text-gray-600 dark:text-gray-400 mb-2">
-                                {message}
-                            </p>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                    {t('invitations.acceptedTitle')}
+                                </h2>
+                                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                                    {message}
+                                </p>
                             {projectName && (
                                 <p className="text-gray-900 dark:text-white font-semibold mb-6">
                                     Welcome to "{projectName}"
@@ -156,7 +153,7 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                             )}
                             <div className="space-y-3">
                                 <Button onClick={handleGoToProject} className="w-full">
-                                    Go to "{projectName}"
+                                    {t('invitations.goToProject', { name: projectName })}
                                 </Button>
                                 <Button onClick={onGoToDashboard} variant="outline" className="w-full">
                                     Go to Dashboard
@@ -171,14 +168,14 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                                 <CheckCircle className="h-12 w-12 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                Already a Member
+                                {t('invitations.alreadyMemberTitle')}
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-2">
                                 {message}
                             </p>
                             {projectName && (
                                 <p className="text-gray-900 dark:text-white font-semibold mb-6">
-                                    Project: "{projectName}"
+                                    {t('invitations.projectLabel', { name: projectName })}
                                 </p>
                             )}
                             <div className="space-y-3">
@@ -198,16 +195,16 @@ export const AcceptInvitation: React.FC<AcceptInvitationProps> = ({
                                 <XCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                Invitation Error
+                                {t('invitations.errorTitle')}
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-6">
                                 {message}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                                You can still access the project if you're already a member. Otherwise, please contact the project owner.
+                                {t('invitations.contactOwnerInfo')}
                             </p>
                             <Button onClick={onGoToDashboard} className="w-full">
-                                Go to Dashboard
+                                {t('buttons.backToDashboard')}
                             </Button>
                         </>
                     )}

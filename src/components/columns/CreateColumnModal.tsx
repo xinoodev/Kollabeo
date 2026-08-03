@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { useLanguage } from '../../contexts/LanguageContext';
 import { apiClient } from "../../lib/api";
 
 interface CreateColumnModalProps {
@@ -31,6 +32,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
     const [name, setName] = useState('');
     const [selectedColor, setSelectedColor] = useState(COLUMN_COLORS[0]);
     const [loading, setLoading] = useState(false);
+    const { t } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,19 +59,19 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title="Create New Column" size="md">
+        <Modal isOpen={isOpen} onClose={handleClose} title={t('columns.createTitle')} size="md">
             <form onSubmit={handleSubmit} className="space-y-6">
                 <Input
-                    label="Column Name"
+                    label={t('columns.name')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter column name"
+                    placeholder={t('columns.enterName')}
                     required
                 />
 
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Column Color
+                        {t('columns.color')}
                     </label>
                     <div className="flex space-x-2">
                         {COLUMN_COLORS.map((color) => (
@@ -88,10 +90,10 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
 
                 <div className="flex space-x-3 pt-4">
                     <Button type="button" variant="secondary" onClick={handleClose}>
-                        Cancel
+                        {t('buttons.cancel')}
                     </Button>
                     <Button type="submit" disabled={loading || !name.trim()}>
-                        {loading? 'Creating...' : 'Create Column'  }
+                        {loading ? t('columns.creating') : t('columns.create')}
                     </Button>
                 </div>
             </form>
