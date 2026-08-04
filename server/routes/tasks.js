@@ -5,6 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
 import pool from '../config/database.js';
+import { createNotification } from '../config/notifications.js';
 
 const router = express.Router();
 
@@ -47,6 +48,22 @@ router.post('/', authenticateToken, [
 
     const task = result.rows[0];
 
+    try {
+      // Notify project members (including owner) about the new task, except the creator
+      const membersRes = await pool.query('SELECT user_id FROM project_members WHERE project_id = $1', [project_id]);
+      const ownerRes = await pool.query('SELECT owner_id FROM projects WHERE id = $1', [project_id]);
+      const recipients = new Set();
+      membersRes.rows.forEach(r => recipients.add(r.user_id));
+      if (ownerRes.rows.length > 0) recipients.add(ownerRes.rows[0].owner_id);
+      recipients.delete(req.user.id);
+
+      for (const userId of recipients) {
+        await createNotification(userId, project_id, 'task_created', { task_id: task.id, title: task.title, created_by: req.user.id });
+      }
+    } catch (err) {
+      console.error('Error notifying members about new task:', err);
+    }
+
     await updateRecentAuditUser(project_id, req.user.id, 'task', task.id);
 
     res.status(201).json(task);
@@ -70,7 +87,7 @@ router.put('/:id', authenticateToken, [
     const { title, description, priority, due_date, assignee_id, tags, column_id, checkbox_states } = req.body;
 
     const taskCheck = await pool.query(
-      'SELECT project_id FROM tasks WHERE id = $1',
+      'SELECT project_id, column_id, title, assignee_id FROM tasks WHERE id = $1',
       [id]
     );
 
@@ -79,6 +96,7 @@ router.put('/:id', authenticateToken, [
     }
 
     const projectId = taskCheck.rows[0].project_id;
+    const oldColumnId = taskCheck.rows[0].column_id;
     const { hasAccess } = await checkProjectAccess(req.user.id, projectId);
     
     if (!hasAccess) {
@@ -145,9 +163,35 @@ router.put('/:id', authenticateToken, [
       values
     );
 
+    const updatedTask = result.rows[0];
+
+    try {
+      // If task moved between columns, notify assignee and collaborators
+      if (column_id !== undefined && oldColumnId !== updatedTask.column_id) {
+        const collRes = await pool.query('SELECT user_id FROM task_collaborators WHERE task_id = $1', [id]);
+        const recipients = new Set(collRes.rows.map(r => r.user_id));
+        if (updatedTask.assignee_id) recipients.add(updatedTask.assignee_id);
+        recipients.delete(req.user.id);
+
+        const colsRes = await pool.query('SELECT id, name FROM task_columns WHERE id = ANY($1::int[])', [[oldColumnId, updatedTask.column_id]]);
+        let fromName = oldColumnId;
+        let toName = updatedTask.column_id;
+        for (const r of colsRes.rows) {
+          if (r.id === oldColumnId) fromName = r.name;
+          if (r.id === updatedTask.column_id) toName = r.name;
+        }
+
+        for (const userId of recipients) {
+          await createNotification(userId, projectId, 'task_moved', { task_id: id, title: updatedTask.title, from_column: fromName, to_column: toName });
+        }
+      }
+    } catch (err) {
+      console.error('Error notifying about task move:', err);
+    }
+
     await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
-    res.json(result.rows[0]);
+    res.json(updatedTask);
   } catch (error) {
     console.error('Update task error:', error);
     res.status(500).json({ error: 'Internal server error' });

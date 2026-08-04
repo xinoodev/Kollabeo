@@ -15,6 +15,7 @@ import collaboratorRoutes from './routes/collaborators.js';
 import invitationRoutes from './routes/invitations.js';
 import invitationLinkRoutes from './routes/invitation-links.js';
 import auditRoutes from './routes/audit.js';
+import notificationRoutes from './routes/notifications.js';
 
 dotenv.config();
 
@@ -95,6 +96,7 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/invitation-links', invitationLinkRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/project-chats', projectChatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

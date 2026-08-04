@@ -5,6 +5,7 @@ import pool from '../config/database.js';
 import { sendProjectInvitationEmail } from '../config/email.js';
 import crypto from 'crypto';
 import { authenticateToken } from '../middleware/auth.js';
+import { createNotification } from '../config/notifications.js';
 import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware } from '../middleware/audit.js';
 
@@ -105,6 +106,15 @@ router.post('/', authenticateToken, [
       inviterName,
       role
     );
+
+    try {
+      if (userResult.rows.length > 0) {
+        const userId = userResult.rows[0].id;
+        await createNotification(userId, project_id, 'project_invitation', { project_name: project.name, message: 'You have been invited to the project. Please check your email to accept.' });
+      }
+    } catch (err) {
+      console.error('Error notifying about invitation:', err);
+    }
 
     if (!emailResult.success) {
       await pool.query('DELETE FROM project_invitations WHERE id = $1', [result.rows[0].id]);

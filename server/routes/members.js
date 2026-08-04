@@ -5,6 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
+import { createNotification } from '../config/notifications.js';
 
 const router = express.Router();
 
@@ -185,6 +186,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM project_members WHERE id = $1', [id]);
 
     await updateRecentAuditUser(project_id, req.user.id, 'project_member', id);
+
+    try {
+      // Notify the removed user and include project name for better display
+      const projRes = await pool.query('SELECT name FROM projects WHERE id = $1', [project_id]);
+      const projectName = projRes.rows[0]?.name;
+      await createNotification(user_id, project_id, 'removed_from_project', { project_id, project_name: projectName });
+    } catch (err) {
+      console.error('Error notifying member removal:', err);
+    }
 
     res.json({ message: 'Member removed successfully' });
   } catch (error) {

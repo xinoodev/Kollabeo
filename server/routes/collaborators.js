@@ -5,6 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
+import { createNotification } from '../config/notifications.js';
 
 const router = express.Router();
 
@@ -74,6 +75,15 @@ router.post('/', authenticateToken, [
       [result.rows[0].id]
     );
 
+    try {
+      // Notify the added user that they were added as collaborator
+      const taskRes = await pool.query('SELECT title, project_id FROM tasks WHERE id = $1', [taskId]);
+      const taskInfo = taskRes.rows[0] || {};
+      await createNotification(userId, taskInfo.project_id, 'added_as_collaborator', { task_id: taskId, task_title: taskInfo.title });
+    } catch (err) {
+      console.error('Error notifying collaborator addition:', err);
+    }
+
     res.status(201).json(collaboratorWithUser.rows[0]);
   } catch (error) {
     console.error('Add collaborator error:', error);
@@ -107,6 +117,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM task_collaborators WHERE id = $1', [id]);
 
     await updateRecentAuditUser(project_id, req.user.id, 'task_collaborator', id);
+
+    try {
+      await createNotification(user_id, project_id, 'removed_from_task', { task_id, removed_by: req.user.id });
+    } catch (err) {
+      console.error('Error notifying collaborator removal:', err);
+    }
 
     res.json({ message: 'Collaborator removed successfully' });
   } catch (error) {

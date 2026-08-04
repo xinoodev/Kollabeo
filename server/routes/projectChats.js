@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { requireProjectAccess, checkProjectAccess } from '../middleware/permissions.js';
+import { createNotification } from '../config/notifications.js';
 
 const router = express.Router();
 
@@ -101,6 +102,24 @@ router.post('/:projectId/:channel', authenticateToken, async (req, res) => {
     // Attach user info
     message.full_name = req.user.full_name;
     message.avatar_url = req.user.avatar_url;
+
+    try {
+      // Notify project members (including owner) except the sender
+      const membersRes = await pool.query('SELECT user_id FROM project_members WHERE project_id = $1', [projectId]);
+      const ownerRes = await pool.query('SELECT owner_id, name FROM projects WHERE id = $1', [projectId]);
+      const recipients = new Set();
+      membersRes.rows.forEach(r => recipients.add(r.user_id));
+      if (ownerRes.rows.length > 0) recipients.add(ownerRes.rows[0].owner_id);
+      recipients.delete(req.user.id);
+
+      const snippet = content.length > 140 ? content.substring(0, 137) + '...' : content;
+
+      for (const userId of recipients) {
+        await createNotification(userId, projectId, 'new_message', { message_id: message.id, snippet, channel, project_name: ownerRes.rows[0]?.name });
+      }
+    } catch (err) {
+      console.error('Error notifying project chat members:', err);
+    }
 
     res.status(201).json(message);
   } catch (error) {
