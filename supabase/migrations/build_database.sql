@@ -148,6 +148,20 @@ CREATE TABLE project_chat_reads (
 
 CREATE INDEX idx_project_chat_reads_project_user ON project_chat_reads(project_id, user_id, channel);
 
+-- Notifications
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  data JSONB,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_notifications_user_created_at ON notifications(user_id, created_at DESC);
+CREATE INDEX idx_notifications_is_read ON notifications(user_id, is_read) WHERE is_read = FALSE;
+
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_email_verification_token ON users(email_verification_token);
 CREATE INDEX idx_users_password_reset_token ON users(password_reset_token);
