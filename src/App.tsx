@@ -1,6 +1,8 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { NotificationsProvider } from './contexts/NotificationsContext';
+import NotificationToasts from './components/ui/NotificationToasts';
 import { Profile } from './pages/Profile';
 import { AuthForm } from './components/auth/AuthForm';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
@@ -126,9 +128,12 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <NotificationsProvider>
+            <Router>
+              <NotificationToasts />
+              <AppContent />
+            </Router>
+          </NotificationsProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

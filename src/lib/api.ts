@@ -428,6 +428,27 @@ class ApiClient {
     });
   }
 
+  // Notification methods
+  async getNotifications() {
+    return this.request('/notifications');
+  }
+
+  async getNotificationsUnreadCount() {
+    return this.request('/notifications/unread-count');
+  }
+
+  async markNotificationRead(id: number) {
+    return this.request(`/notifications/${id}/mark-read`, {
+      method: 'POST'
+    });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/mark-all-read', {
+      method: 'POST'
+    });
+  }
+
   async getAuditLog(logId: number): Promise<AuditLog> {
     return this.request(`/audit/log/${logId}`);
   }

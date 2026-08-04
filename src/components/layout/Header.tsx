@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { ThemeSelector } from '../ui/ThemeSelector';
 import LanguageSelector from '../ui/LanguageSelector';
 import { LogOut, Plus, User, Settings } from 'lucide-react';
+import NotificationBell from '../ui/NotificationBell';
 
 interface HeaderProps {
   onCreateProject: () => void;
@@ -60,6 +61,10 @@ export const Header: React.FC<HeaderProps> = ({ onCreateProject, onNavigateToPro
               <Plus className="mr-2 h-4 w-4" />
               {t('header.newProject')}
             </Button>
+
+            <div className="mr-2">
+              <NotificationBell />
+            </div>
 
             <div className="relative" data-profile-dropdown>
               <button
