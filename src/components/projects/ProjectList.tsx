@@ -3,6 +3,7 @@ import { Project } from '../../types';
 import { ProjectCard } from './ProjectCard';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Loader2, FolderOpen } from 'lucide-react';
 
 interface ProjectListProps {
@@ -14,6 +15,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({ onProjectSelect, refre
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const fetchProjects = async () => {
 

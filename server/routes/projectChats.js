@@ -5,6 +5,47 @@ import { requireProjectAccess, checkProjectAccess } from '../middleware/permissi
 
 const router = express.Router();
 
+// Get unread message counts for the current user on a project (per channel)
+router.get('/:projectId/unread', authenticateToken, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const { hasAccess, role } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) return res.status(403).json({ error: 'Access denied' });
+
+    // general channel
+    const lastGeneral = await pool.query(
+      'SELECT last_read_at FROM project_chat_reads WHERE project_id = $1 AND user_id = $2 AND channel = $3',
+      [projectId, req.user.id, 'general']
+    );
+    const lastGeneralAt = lastGeneral.rows[0] ? lastGeneral.rows[0].last_read_at : null;
+    const generalCountRes = await pool.query(
+      'SELECT COUNT(*) FROM project_chats WHERE project_id = $1 AND channel = $2 AND created_at > COALESCE($3, to_timestamp(0))',
+      [projectId, 'general', lastGeneralAt]
+    );
+    const general = parseInt(generalCountRes.rows[0].count, 10);
+
+    let admins = 0;
+    if (role === 'owner' || role === 'admin') {
+      const lastAdmins = await pool.query(
+        'SELECT last_read_at FROM project_chat_reads WHERE project_id = $1 AND user_id = $2 AND channel = $3',
+        [projectId, req.user.id, 'admins']
+      );
+      const lastAdminsAt = lastAdmins.rows[0] ? lastAdmins.rows[0].last_read_at : null;
+      const adminsCountRes = await pool.query(
+        'SELECT COUNT(*) FROM project_chats WHERE project_id = $1 AND channel = $2 AND created_at > COALESCE($3, to_timestamp(0))',
+        [projectId, 'admins', lastAdminsAt]
+      );
+      admins = parseInt(adminsCountRes.rows[0].count, 10);
+    }
+
+    res.json({ general, admins, total: general + admins });
+  } catch (error) {
+    console.error('Get unread counts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get chat history for a project and channel
 router.get('/:projectId/:channel', authenticateToken, async (req, res) => {
   try {
@@ -29,6 +70,8 @@ router.get('/:projectId/:channel', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 // Post a message (also used by server-side Socket.IO flows)
 router.post('/:projectId/:channel', authenticateToken, async (req, res) => {
@@ -62,6 +105,34 @@ router.post('/:projectId/:channel', authenticateToken, async (req, res) => {
     res.status(201).json(message);
   } catch (error) {
     console.error('Post chat message error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mark a channel as read for the current user
+router.post('/:projectId/:channel/read', authenticateToken, async (req, res) => {
+  try {
+    const { projectId, channel } = req.params;
+
+    const { hasAccess, role } = await checkProjectAccess(req.user.id, projectId);
+    if (!hasAccess) return res.status(403).json({ error: 'Access denied' });
+
+    if (channel === 'admins') {
+      const allowed = role === 'owner' || role === 'admin';
+      if (!allowed) return res.status(403).json({ error: 'Admins only channel' });
+    }
+
+    await pool.query(
+      `INSERT INTO project_chat_reads (project_id, user_id, channel, last_read_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (project_id, user_id, channel)
+       DO UPDATE SET last_read_at = NOW()`,
+      [projectId, req.user.id, channel]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Mark channel read error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

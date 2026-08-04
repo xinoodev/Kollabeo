@@ -136,6 +136,18 @@ CREATE TABLE project_chats (
 
 CREATE INDEX idx_project_chats_project_channel ON project_chats(project_id, channel, created_at DESC);
 
+-- Track last read timestamps per user/channel to support unread counts
+CREATE TABLE project_chat_reads (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  channel VARCHAR(20) NOT NULL CHECK (channel IN ('general', 'admins')),
+  last_read_at TIMESTAMP,
+  UNIQUE(project_id, user_id, channel)
+);
+
+CREATE INDEX idx_project_chat_reads_project_user ON project_chat_reads(project_id, user_id, channel);
+
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_email_verification_token ON users(email_verification_token);
 CREATE INDEX idx_users_password_reset_token ON users(password_reset_token);

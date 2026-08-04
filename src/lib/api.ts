@@ -11,10 +11,12 @@ class ApiClient {
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    // Prefer an up-to-date token from the instance, but fall back to localStorage
+    const token = this.token || localStorage.getItem('token');
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
       ...options,
@@ -413,6 +415,16 @@ class ApiClient {
     return this.request(`/project-chats/${projectId}/${channel}`, {
       method: 'POST',
       body: JSON.stringify({ content }),
+    });
+  }
+
+  async getProjectChatUnread(projectId: number) {
+    return this.request(`/project-chats/${projectId}/unread`);
+  }
+
+  async markProjectChatRead(projectId: number, channel: 'general' | 'admins') {
+    return this.request(`/project-chats/${projectId}/${channel}/read`, {
+      method: 'POST'
     });
   }
 

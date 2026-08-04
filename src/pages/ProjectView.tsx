@@ -49,12 +49,45 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
     isChatOpenRef.current = isChatOpen;
   }, [isChatOpen]);
 
+  // When opening the chat, mark channels as read on the server
+  useEffect(() => {
+    if (!isChatOpen) return;
+    (async () => {
+      try {
+        await apiClient.markProjectChatRead(project.id, 'general');
+        if (canManageProject()) {
+          await apiClient.markProjectChatRead(project.id, 'admins');
+        }
+        setUnreadCount(0);
+      } catch (err) {
+        console.error('Failed to mark chat as read', err);
+      }
+    })();
+  }, [isChatOpen, project.id]);
+
   const isOwner = user?.id === project.owner_id;
 
   useEffect(() => {
     setProject(initialProject);
   }, [initialProject]);
   const [userRole, setUserRole] = useState<{ role: string; isOwner: boolean } | null>(null);
+  
+  // Fetch unread counts when entering the project view
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const unread = await apiClient.getProjectChatUnread(project.id);
+        if (!mounted) return;
+        const total = (unread && typeof unread.total === 'number') ? unread.total : (((unread && ((unread.general || 0) + (unread.admins || 0))) || 0));
+        setUnreadCount(total);
+      } catch (err) {
+        console.error('Failed to load unread counts', err);
+      }
+    })();
+  
+    return () => { mounted = false; };
+  }, [project.id]);
   const [loadingRole, setLoadingRole] = useState(true);
 
   useEffect(() => {
