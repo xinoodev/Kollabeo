@@ -28,6 +28,7 @@ const Toast: React.FC<{ n: any; onClose: () => void }> = ({ n, onClose }) => {
 
   return (
     <div className="mb-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-3">
+      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">Nueva notificación</h2>
       <div className="flex items-start justify-between">
         <div className="text-sm text-gray-800 dark:text-gray-100">{message}</div>
         <button onClick={onClose} className="text-xs text-gray-500 ml-2">Cerrar</button>
