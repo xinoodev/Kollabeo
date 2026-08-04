@@ -66,7 +66,7 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
     return () => {
       localSocket.off('message', handleIncoming);
       try {
-        if (prevChannelRef.current) {
+        if (prevChannelRef.current && !providedSocket) {
           localSocket.emit('leaveProject', { projectId, channel: prevChannelRef.current });
         }
       } catch (e) {}
@@ -80,6 +80,12 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, canViewAdmi
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
+
+    // If using a shared socket provided by the parent, joining/leaving is handled there
+    if (providedSocket) {
+      prevChannelRef.current = selectedChannel;
+      return;
+    }
 
     const prev = prevChannelRef.current;
     if (prev && prev !== selectedChannel) {

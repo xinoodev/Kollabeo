@@ -43,6 +43,11 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const socketRef = React.useRef<Socket | null>(null);
+  const isChatOpenRef = React.useRef(isChatOpen);
+
+  React.useEffect(() => {
+    isChatOpenRef.current = isChatOpen;
+  }, [isChatOpen]);
 
   const isOwner = user?.id === project.owner_id;
 
@@ -72,7 +77,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
     const handler = (payload: any) => {
       const incoming = payload && payload.message ? payload.message : payload;
       const channel = payload && payload.channel ? payload.channel : 'general';
-      if (!isChatOpen && incoming.user_id !== user?.id) {
+      if (!isChatOpenRef.current && incoming.user_id !== user?.id) {
         setUnreadCount((n) => n + 1);
       }
     };
@@ -300,7 +305,16 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
         <div className="relative">
           <button
             aria-label="Open project chat"
-            onClick={() => { if (!isChatOpen) setUnreadCount(0); setIsChatOpen(prev => !prev); }}
+            onClick={() => {
+              setIsChatOpen(prev => {
+                const next = !prev;
+                // If opening chat, clear unread count
+                if (next) setUnreadCount(0);
+                // Update ref synchronously to avoid race with incoming socket messages
+                isChatOpenRef.current = next;
+                return next;
+              });
+            }}
             className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:scale-105"
             style={{ backgroundColor: '#2563eb' }}
           >
