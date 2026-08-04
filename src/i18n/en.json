@@ -26,6 +26,7 @@
     "enterPassword": "Enter your password",
     "forgotPassword": "Forgot Password?",
     "signIn": "Sign In",
+    "signUp": "Sign Up",
     "resendVerification": "Resend verification email",
     "needAccount": "Need an account? Sign up",
     "alreadyHaveAccount": "Already have an account? Sign in",
