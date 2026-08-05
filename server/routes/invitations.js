@@ -15,7 +15,7 @@ router.use(auditMiddleware);
 
 router.post('/', authenticateToken, [
   body('project_id').isInt(),
-  body('email').isEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false }),
   body('role').isIn(['admin', 'member'])
 ], async (req, res) => {
   try {

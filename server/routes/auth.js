@@ -14,7 +14,7 @@ const generateVerificationToken = () => {
 };
 
 router.post('/register', [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false }),
   body('password').isLength({ min: 6 }),
   body('fullName').trim().isLength({ min: 2 })
 ], async (req, res) => {
@@ -124,7 +124,7 @@ router.post('/verify-email', [
 });
 
 router.post('/resend-verification', [
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -173,7 +173,7 @@ router.post('/resend-verification', [
 });
 
 router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false }),
   body('password').exists()
 ], async (req, res) => {
   try {
@@ -237,7 +237,7 @@ router.get('/me', authenticateToken, (req, res) => {
 });
 
 router.post('/request-password-reset', [
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
