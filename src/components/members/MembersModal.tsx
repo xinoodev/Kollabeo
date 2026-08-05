@@ -30,6 +30,9 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   const [linkCopied, setLinkCopied] = useState(false);
   const [linkLoading, setLinkLoading] = useState(false);
   const [showInviteLink, setShowInviteLink] = useState(false);
+  const [expiresInDays, setExpiresInDays] = useState('7');
+  const [permanent, setPermanent] = useState(false);
+  const [maxUses, setMaxUses] = useState('');
   const { user } = useAuth();
   const { t } = useLanguage();
 
@@ -71,7 +74,12 @@ export const MembersModal: React.FC<MembersModalProps> = ({
     setLinkLoading(true);
     setError('');
     try {
-      const data = await apiClient.createInvitationLink(project.id);
+      const options: any = {};
+      if (permanent) options.permanent = true;
+      else if (expiresInDays) options.expiresInDays = Number(expiresInDays);
+      if (maxUses) options.maxUses = Number(maxUses);
+
+      const data = await apiClient.createInvitationLink(project.id, options);
       setInvitationLink(data.link);
       setSuccess(data.message);
     } catch (error: any) {
@@ -86,7 +94,12 @@ export const MembersModal: React.FC<MembersModalProps> = ({
     setError('');
     try {
       await apiClient.deactivateInvitationLink(project.id);
-      const data = await apiClient.createInvitationLink(project.id);
+      const options: any = {};
+      if (permanent) options.permanent = true;
+      else if (expiresInDays) options.expiresInDays = Number(expiresInDays);
+      if (maxUses) options.maxUses = Number(maxUses);
+
+      const data = await apiClient.createInvitationLink(project.id, options);
       setInvitationLink(data.link);
       setSuccess(data.message);
     } catch (error: any) {
@@ -317,7 +330,14 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     </div>
 
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {t('members.expires', { date: new Date(invitationLink.expires_at).toLocaleString() })}
+                      {invitationLink.permanent ? (
+                        <span>{t('members.permanentLink') || 'Permanent link'}</span>
+                      ) : (
+                        invitationLink.expires_at ? t('members.expires', { date: new Date(invitationLink.expires_at).toLocaleString() }) : null
+                      )}
+                      {invitationLink.max_uses ? (
+                        <div className="mt-1">Uses: {invitationLink.uses_count}/{invitationLink.max_uses}</div>
+                      ) : null}
                     </div>
 
                     <div className="flex gap-2">
@@ -343,14 +363,50 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    type="button"
-                    onClick={handleCreateLink}
-                    disabled={linkLoading}
-                    fullWidth
-                  >
-                    {linkLoading ? t('members.creatingLink') : t('members.createInvitationLink')}
-                  </Button>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">{t('members.expiresInDays') || 'Expires in (days)'}</label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={expiresInDays}
+                          onChange={(e) => setExpiresInDays(e.target.value)}
+                          disabled={permanent}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="permanent"
+                          type="checkbox"
+                          checked={permanent}
+                          onChange={(e) => setPermanent(e.target.checked)}
+                        />
+                        <label htmlFor="permanent" className="text-sm text-gray-600 dark:text-gray-300">{t('members.permanent') || 'Permanent'}</label>
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">{t('members.maxUses') || 'Max uses (optional)'}</label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={maxUses}
+                          onChange={(e) => setMaxUses(e.target.value)}
+                          placeholder={t('members.unlimited') || 'Unlimited'}
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleCreateLink}
+                      disabled={linkLoading}
+                      fullWidth
+                    >
+                      {linkLoading ? t('members.creatingLink') : t('members.createInvitationLink')}
+                    </Button>
+                  </div>
                 )}
               </div>
             )}

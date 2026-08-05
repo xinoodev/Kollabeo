@@ -360,9 +360,10 @@ class ApiClient {
     return this.request(`/invitation-links/project/${projectId}`);
   }
 
-  async createInvitationLink(projectId: number) {
+  async createInvitationLink(projectId: number, options: any = {}) {
     return this.request(`/invitation-links/project/${projectId}`, {
       method: 'POST',
+      body: JSON.stringify(options),
     });
   }
 
