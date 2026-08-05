@@ -83,6 +83,16 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Simple request logger to help diagnose routing issues (method + path + auth present)
+app.use((req, res, next) => {
+  try {
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} Auth=${!!req.headers.authorization}`);
+  } catch (err) {
+    // ignore logging errors
+  }
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);

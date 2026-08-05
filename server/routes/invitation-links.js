@@ -163,6 +163,14 @@ router.post('/project/:projectId', authenticateToken, async (req, res) => {
 
 router.post('/accept/:token', authenticateToken, async (req, res) => {
     const client = await pool.connect();
+    console.log(`[INVITATION-LINK] POST /accept called - params.token=${req.params.token ? '[REDACTED]' : 'null'} user=${req.user?.id}`);
+
+    const { token } = req.params;
+    if (!token) {
+        console.warn('[INVITATION-LINK] No token provided in params');
+        client.release();
+        return res.status(400).json({ error: 'Invitation link token required' });
+    }
 
     try {
         await client.query('BEGIN');
@@ -262,12 +270,34 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Accept invitation link error:', error);
+        console.error('Accept invitation link error:', error?.stack || error);
         res.status(500).json({ error: 'Internal server error' });
     } finally {
         client.release();
     }
 });
+
+// Debug route: fetch invitation link by token (development only)
+if (process.env.NODE_ENV !== 'production') {
+    router.get('/debug/:token', async (req, res) => {
+        try {
+            const { token } = req.params;
+            const result = await pool.query(
+                `SELECT * FROM project_invitation_links WHERE token = $1`,
+                [token]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Invitation link not found' });
+            }
+
+            res.json({ link: result.rows[0] });
+        } catch (err) {
+            console.error('Debug fetch invitation link error:', err?.stack || err);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+}
 
 router.delete('/project/:projectId', authenticateToken, async (req, res) => {
     try {

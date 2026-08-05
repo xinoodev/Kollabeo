@@ -133,9 +133,15 @@ router.post('/', authenticateToken, [
   }
 });
 
-router.post('/accept/:token', authenticateToken, async (req, res) => {
+router.post('/accept/:token?', authenticateToken, async (req, res) => {
   try {
-    const { token } = req.params;
+    const token = req.params.token || req.body.token;
+    console.log(`[INVITATION] POST /accept called - params.token=${req.params.token} body.token=${req.body?.token ? '[REDACTED]' : undefined} resolved=${token ? '[REDACTED]' : 'null'} user=${req.user?.id}`);
+
+    if (!token) {
+      console.warn('[INVITATION] No token provided in params or body');
+      return res.status(400).json({ error: 'Invitation token required' });
+    }
 
     const invitationResult = await pool.query(
       `SELECT * FROM project_invitations 
@@ -165,10 +171,21 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
 
     if (existingMember.rows.length > 0) {
       await pool.query(
-        `UPDATE project_invitations SET status = 'accepted' WHERE id = $1`,
+        `UPDATE project_invitations SET status = 'accepted', accepted_at = NOW() WHERE id = $1`,
         [invitation.id]
       );
-      return res.status(400).json({ error: 'You are already a member of this project' });
+
+      const projectResult = await pool.query(
+        `SELECT name FROM projects WHERE id = $1`,
+        [invitation.project_id]
+      );
+
+      return res.status(201).json({
+        message: 'You are already a member of this project',
+        projectId: invitation.project_id,
+        projectName: projectResult.rows[0].name,
+        alreadyMember: true
+      });
     }
 
     await pool.query('BEGIN');
@@ -181,7 +198,7 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
       );
 
       await pool.query(
-        `UPDATE project_invitations SET status = 'accepted', updated_at = NOW() WHERE id = $1`,
+        `UPDATE project_invitations SET status = 'accepted', accepted_at = NOW() WHERE id = $1`,
         [invitation.id]
       );
 
@@ -197,17 +214,49 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
 
       await pool.query('COMMIT');
 
-      res.json({ message: 'Invitation accepted successfully' });
+      const projectResult = await pool.query(
+        'SELECT name FROM projects WHERE id = $1',
+        [invitation.project_id]
+      );
+
+      res.json({
+        message: 'Invitation accepted successfully',
+        projectId: invitation.project_id,
+        projectName: projectResult.rows[0]?.name,
+        success: true
+      });
     } catch (error) {
       await pool.query('ROLLBACK');
       throw error;
     }
 
   } catch (error) {
-    console.error('Accept invitation error:', error);
+    console.error('Accept invitation error:', error?.stack || error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Debug route: fetch invitation by token (development only)
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/debug/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const invitationResult = await pool.query(
+        `SELECT * FROM project_invitations WHERE token = $1`,
+        [token]
+      );
+
+      if (invitationResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Invitation not found' });
+      }
+
+      res.json({ invitation: invitationResult.rows[0] });
+    } catch (err) {
+      console.error('Debug fetch invitation error:', err?.stack || err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+}
 
 router.post('/reject/:token', authenticateToken, async (req, res) => {
   try {
@@ -235,7 +284,7 @@ router.post('/reject/:token', authenticateToken, async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE project_invitations SET status = 'rejected', updated_at = NOW() WHERE id = $1`,
+      `UPDATE project_invitations SET status = 'rejected' WHERE id = $1`,
       [invitation.id]
     );
 
@@ -310,7 +359,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE project_invitations SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+      `UPDATE project_invitations SET status = 'cancelled' WHERE id = $1`,
       [id]
     );
 
