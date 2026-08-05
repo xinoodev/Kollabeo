@@ -309,103 +309,133 @@ export const MembersModal: React.FC<MembersModalProps> = ({
 
                 {invitationLink ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <Input
-                        value={`${window.location.origin}/accept-invitation?link=${invitationLink.token}`}
-                        readOnly
-                        className="flex-1 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCopyLink}
-                        variant="outline"
-                        className="flex-shrink-0"
-                      >
-                        {linkCopied ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <div className="text-xs font-medium text-gray-700 dark:text-gray-200">{t('members.invitationLinkLabel')}</div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Input
+                              value={`${window.location.origin}/accept-invitation?link=${invitationLink.token}`}
+                              readOnly
+                              className="flex-1 text-sm"
+                            />
+                            <Button
+                              type="button"
+                              onClick={handleCopyLink}
+                              variant="outline"
+                              className="flex-shrink-0"
+                            >
+                              {linkCopied ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {invitationLink.permanent ? (
-                        <span>{t('members.permanentLink') || 'Permanent link'}</span>
-                      ) : (
-                        invitationLink.expires_at ? t('members.expires', { date: new Date(invitationLink.expires_at).toLocaleString() }) : null
-                      )}
-                      {invitationLink.max_uses ? (
-                        <div className="mt-1">Uses: {invitationLink.uses_count}/{invitationLink.max_uses}</div>
-                      ) : null}
-                    </div>
+                          <div className="mt-3 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                            {invitationLink.permanent ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{t('members.permanent')}</span>
+                            ) : (
+                              invitationLink.expires_at ? (
+                                <span>{t('members.expires', { date: new Date(invitationLink.expires_at).toLocaleString() })}</span>
+                              ) : null
+                            )}
 
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        onClick={handleGenerateNewLink}
-                        disabled={linkLoading}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        {t('members.generateNewLink')}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleDeactivateLink}
-                        disabled={linkLoading}
-                        variant="outline"
-                        className="flex-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        {t('members.deactivateLink')}
-                      </Button>
+                            {invitationLink.max_uses ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-700/40 text-gray-700 dark:text-gray-200">{`Uses: ${invitationLink.uses_count}/${invitationLink.max_uses}`}</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">{t('members.unlimited')}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex-shrink-0 w-36 space-y-2">
+                          <Button
+                            type="button"
+                            onClick={handleGenerateNewLink}
+                            disabled={linkLoading}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2 inline" />
+                            <span className="align-middle">{t('members.generateNewLink')}</span>
+                          </Button>
+
+                          <Button
+                            type="button"
+                            onClick={handleDeactivateLink}
+                            disabled={linkLoading}
+                            variant="outline"
+                            className="w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            {t('members.deactivateLink')}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-xs text-gray-500 dark:text-gray-400">{t('members.expiresInDays') || 'Expires in (days)'}</label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={expiresInDays}
-                          onChange={(e) => setExpiresInDays(e.target.value)}
-                          disabled={permanent}
-                        />
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('members.invitationLinkLabel')}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{t('members.invitationLinkInfo')}</div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="permanent"
-                          type="checkbox"
-                          checked={permanent}
-                          onChange={(e) => setPermanent(e.target.checked)}
-                        />
-                        <label htmlFor="permanent" className="text-sm text-gray-600 dark:text-gray-300">{t('members.permanent') || 'Permanent'}</label>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-500 dark:text-gray-400 block">{t('members.expiresInDays')}</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={expiresInDays}
+                            onChange={(e) => setExpiresInDays(e.target.value)}
+                            disabled={permanent}
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs text-gray-500 dark:text-gray-400 block">{t('members.maxUses')}</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={maxUses}
+                            onChange={(e) => setMaxUses(e.target.value)}
+                            placeholder={t('members.unlimited')}
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">{t('members.permanent')}</label>
+                          <div className="mt-1">
+                            <button
+                              type="button"
+                              onClick={() => setPermanent(!permanent)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${permanent ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+                              aria-pressed={permanent}
+                            >
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${permanent ? 'translate-x-5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="text-xs text-gray-500 dark:text-gray-400">{t('members.maxUses') || 'Max uses (optional)'}</label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={maxUses}
-                          onChange={(e) => setMaxUses(e.target.value)}
-                          placeholder={t('members.unlimited') || 'Unlimited'}
-                        />
+                      <div className="mt-4">
+                        <Button
+                          type="button"
+                          onClick={handleCreateLink}
+                          disabled={linkLoading}
+                          fullWidth
+                        >
+                          {linkLoading ? t('members.creatingLink') : t('members.createInvitationLink')}
+                        </Button>
                       </div>
                     </div>
-
-                    <Button
-                      type="button"
-                      onClick={handleCreateLink}
-                      disabled={linkLoading}
-                      fullWidth
-                    >
-                      {linkLoading ? t('members.creatingLink') : t('members.createInvitationLink')}
-                    </Button>
                   </div>
                 )}
               </div>
