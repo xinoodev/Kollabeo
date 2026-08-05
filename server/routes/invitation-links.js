@@ -40,13 +40,15 @@ router.get('/project/:projectId', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Only admins and owners can view invitation links' });
         }
 
-        const result = await pool.query(
-            `SELECT * FROM project_invitation_links
-            WHERE project_id = $1 AND is_active = TRUE AND expires_at > NOW()
-            ORDER BY created_at DESC
-            LIMIT 1`,
-            [projectId]
-        );
+                const result = await pool.query(
+                        `SELECT * FROM project_invitation_links
+                        WHERE project_id = $1 AND is_active = TRUE
+                            AND (COALESCE(permanent, FALSE) = TRUE OR (expires_at IS NOT NULL AND expires_at > NOW()))
+                            AND (max_uses IS NULL OR uses_count < max_uses)
+                        ORDER BY created_at DESC
+                        LIMIT 1`,
+                        [projectId]
+                );
 
         if (result.rows.length === 0) {
             return res.json({ link: null });
@@ -83,13 +85,15 @@ router.post('/project/:projectId', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        const existingLink = await pool.query(
-            `SELECT * FROM project_invitation_links
-            WHERE project_id = $1 AND is_active = TRUE AND expires_at > NOW()
-            ORDER BY created_at DESC
-            LIMIT 1`,
-            [projectId]
-        );
+                const existingLink = await pool.query(
+                        `SELECT * FROM project_invitation_links
+                        WHERE project_id = $1 AND is_active = TRUE
+                            AND (COALESCE(permanent, FALSE) = TRUE OR (expires_at IS NOT NULL AND expires_at > NOW()))
+                            AND (max_uses IS NULL OR uses_count < max_uses)
+                        ORDER BY created_at DESC
+                        LIMIT 1`,
+                        [projectId]
+                );
 
         if (existingLink.rows.length > 0) {
             await client.query('COMMIT');
@@ -107,13 +111,39 @@ router.post('/project/:projectId', authenticateToken, async (req, res) => {
         );
 
         const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        const {
+            expiresAt: expiresAtRaw,
+            expiresInHours,
+            expiresInDays,
+            permanent: permanentRaw,
+            maxUses: maxUsesRaw
+        } = req.body || {};
+
+        const permanent = permanentRaw === true || permanentRaw === 'true' || permanentRaw === 1 || permanentRaw === '1';
+
+        let computedExpiresAt = null;
+        if (!permanent) {
+            if (expiresAtRaw) computedExpiresAt = new Date(expiresAtRaw);
+            else if (expiresInHours) computedExpiresAt = new Date(Date.now() + Number(expiresInHours) * 3600000);
+            else if (expiresInDays) computedExpiresAt = new Date(Date.now() + Number(expiresInDays) * 24 * 3600000);
+            else computedExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        }
+
+        const maxUses = typeof maxUsesRaw !== 'undefined' && maxUsesRaw !== null && maxUsesRaw !== ''
+            ? parseInt(maxUsesRaw, 10)
+            : null;
+
+        if (maxUses !== null && (isNaN(maxUses) || maxUses <= 0)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'maxUses must be a positive integer' });
+        }
 
         const result = await client.query(
-            `INSERT INTO project_invitation_links (project_id, token, created_by, expires_at)
-            VALUES ($1, $2, $3, $4)
+            `INSERT INTO project_invitation_links (project_id, token, created_by, expires_at, max_uses, uses_count, permanent)
+            VALUES ($1, $2, $3, $4, $5, 0, $6)
             RETURNING *`,
-            [projectId, token, req.user.id, expiresAt]
+            [projectId, token, req.user.id, computedExpiresAt, maxUses, permanent]
         );
 
         await client.query('COMMIT');
@@ -141,7 +171,8 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
 
         const linkResult = await client.query(
             `SELECT * FROM project_invitation_links
-            WHERE token = $1 AND is_active = TRUE`,
+            WHERE token = $1 AND is_active = TRUE
+            FOR UPDATE`,
             [token]
         );
 
@@ -152,13 +183,22 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
 
         const link = linkResult.rows[0];
 
-        if (new Date() > new Date(link.expires_at)) {
+        if (!link.permanent && link.expires_at && new Date() > new Date(link.expires_at)) {
             await client.query(
                 'UPDATE project_invitation_links SET is_active = FALSE WHERE id = $1',
                 [link.id]
             );
             await client.query('COMMIT');
             return res.status(400).json({ error: 'Invitation link has expired' });
+        }
+
+        if (link.max_uses !== null && link.uses_count >= link.max_uses) {
+            await client.query(
+                'UPDATE project_invitation_links SET is_active = FALSE WHERE id = $1',
+                [link.id]
+            );
+            await client.query('COMMIT');
+            return res.status(400).json({ error: 'Invitation link has reached its maximum number of uses' });
         }
 
         const ownerCheck = await client.query(
@@ -196,6 +236,15 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
             `INSERT INTO project_members (project_id, user_id, role)
             VALUES ($1, $2, 'member')`,
             [link.project_id, req.user.id]
+        );
+
+        // Increment uses and deactivate if max reached
+        await client.query('UPDATE project_invitation_links SET uses_count = uses_count + 1 WHERE id = $1', [link.id]);
+        await client.query(
+            `UPDATE project_invitation_links
+             SET is_active = FALSE
+             WHERE id = $1 AND max_uses IS NOT NULL AND uses_count >= max_uses`,
+            [link.id]
         );
 
         const projectResult = await client.query(
