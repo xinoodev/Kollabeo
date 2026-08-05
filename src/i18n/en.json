@@ -231,7 +231,11 @@
       "adminDesc": "Can manage members and project settings",
       "memberLabel": "Member:",
       "memberDesc": "Can view and edit tasks"
-    }
+    },
+    "expiresInDays": "Expires in (days)",
+    "permanent": "Permanent",
+    "maxUses": "Max Uses",
+    "unlimited": "Unlimited"
   },
   "audit": {
     "title": "Audit Log",

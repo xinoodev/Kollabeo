@@ -230,7 +230,11 @@
       "adminDesc": "Puede gestionar miembros y la configuración del proyecto",
       "memberLabel": "Miembro:",
       "memberDesc": "Puede ver y editar tareas"
-    }
+    },
+    "expiresInDays": "Expira en (días)",
+    "permanent": "Permanente",
+    "maxUses": "Usos máximos",
+    "unlimited": "Ilimitado"
   },
   "audit": {
     "title": "Registro de auditoría",
