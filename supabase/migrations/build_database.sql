@@ -109,9 +109,12 @@ CREATE TABLE project_invitation_links (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
   token VARCHAR(255) UNIQUE NOT NULL,
   created_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
+  expires_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE
+  is_active BOOLEAN DEFAULT TRUE,
+  max_uses INTEGER,
+  uses_count INTEGER DEFAULT 0,
+  permanent BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE audit_logs (
