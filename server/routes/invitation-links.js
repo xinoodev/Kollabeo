@@ -163,11 +163,9 @@ router.post('/project/:projectId', authenticateToken, async (req, res) => {
 
 router.post('/accept/:token', authenticateToken, async (req, res) => {
     const client = await pool.connect();
-    console.log(`[INVITATION-LINK] POST /accept called - params.token=${req.params.token ? '[REDACTED]' : 'null'} user=${req.user?.id}`);
 
     const { token } = req.params;
     if (!token) {
-        console.warn('[INVITATION-LINK] No token provided in params');
         client.release();
         return res.status(400).json({ error: 'Invitation link token required' });
     }

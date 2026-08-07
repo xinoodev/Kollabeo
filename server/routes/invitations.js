@@ -136,10 +136,8 @@ router.post('/', authenticateToken, [
 router.post('/accept/:token?', authenticateToken, async (req, res) => {
   try {
     const token = req.params.token || req.body.token;
-    console.log(`[INVITATION] POST /accept called - params.token=${req.params.token} body.token=${req.body?.token ? '[REDACTED]' : undefined} resolved=${token ? '[REDACTED]' : 'null'} user=${req.user?.id}`);
 
     if (!token) {
-      console.warn('[INVITATION] No token provided in params or body');
       return res.status(400).json({ error: 'Invitation token required' });
     }
 
