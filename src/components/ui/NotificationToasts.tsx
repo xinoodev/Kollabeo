@@ -1,12 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const Toast: React.FC<{ n: any; onClose: () => void }> = ({ n, onClose }) => {
+type NotificationToastProps = {
+  durationSeconds?: number;
+};
+
+const Toast: React.FC<{ n: any; onClose: () => void; durationSeconds: number }> = ({ n, onClose, durationSeconds }) => {
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    const t = setTimeout(onClose, 6000);
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { onCloseRef.current(); } catch (e) { /* ignore */ }
+    }, durationSeconds * 1000);
     return () => clearTimeout(t);
-  }, [n, onClose]);
+  }, [n.id, durationSeconds]);
   const { t } = useLanguage();
 
   const message = (() => {
@@ -54,7 +65,7 @@ const Toast: React.FC<{ n: any; onClose: () => void }> = ({ n, onClose }) => {
   );
 };
 
-const NotificationToasts: React.FC = () => {
+const NotificationToasts: React.FC<NotificationToastProps> = () => {
   const { notifications, markRead } = useNotifications();
   const [queue, setQueue] = useState<any[]>([]);
 
@@ -78,7 +89,7 @@ const NotificationToasts: React.FC = () => {
   return (
     <div className="fixed top-4 right-4 z-50 flex flex-col items-end">
       {queue.map(n => (
-        <Toast key={n.id} n={n} onClose={() => handleClose(n.id)} />
+        <Toast key={n.id} n={n} onClose={() => handleClose(n.id)} durationSeconds={5} />
       ))}
     </div>
   );

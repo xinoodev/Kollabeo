@@ -3,6 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import { Server as IOServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import pool from './config/database.js';
+import { initSocket } from './config/socket.js';
 import projectChatRoutes from './routes/projectChats.js';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
@@ -33,14 +36,18 @@ const io = new IOServer(server, {
   }
 });
 
+// Make the io instance available to other modules
+initSocket(io);
+
 // Basic token auth for sockets (reads Bearer token from query)
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     if (!token) return next(new Error('Authentication error'));
-    // We won't verify JWT here deeply; frontend should send token and server REST endpoints validate.
-    // Optionally, you could verify JWT similarly to HTTP using jwt.verify.
-    socket.userToken = token;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const result = await pool.query('SELECT id, email, full_name, username, avatar_url FROM users WHERE id = $1', [decoded.userId]);
+    if (result.rows.length === 0) return next(new Error('Authentication error'));
+    socket.user = result.rows[0];
     next();
   } catch (err) {
     next(new Error('Authentication error'));
@@ -50,6 +57,15 @@ io.use(async (socket, next) => {
 // Socket.IO events
 io.on('connection', (socket) => {
   console.log('Socket connected', socket.id);
+  // Join a user-specific room so we can emit direct notifications
+  try {
+    if (socket.user && socket.user.id) {
+      const userRoom = `user_${socket.user.id}`;
+      socket.join(userRoom);
+    }
+  } catch (e) {
+    // ignore
+  }
 
   socket.on('joinProject', ({ projectId, channel }) => {
     const room = `project_${projectId}_${channel}`;
