@@ -2,6 +2,7 @@ import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-
 import { Loader2, Plus } from 'lucide-react';
 import { KanbanColumn } from './KanbanColumn';
 import { useAuth } from '../../contexts/AuthContext';
+import { Socket } from 'socket.io-client';
 import {
   DndContext,
   DragEndEvent,
@@ -14,7 +15,7 @@ import {
   closestCorners,
   MeasuringStrategy,
 } from '@dnd-kit/core';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Project, TaskColumn, Task } from '../../types';
 import { Button } from '../ui/Button';
 import { TaskCard } from './TaskCard';
@@ -22,6 +23,7 @@ import { apiClient } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface KanbanBoardProps {
+  socket?: Socket | null;
   project: Project;
   onTaskClick: (task: Task) => void;
   onAddTask: (columnId: number) => void;
@@ -33,6 +35,7 @@ interface KanbanBoardProps {
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
+  socket,
   project,
   onTaskClick,
   onAddTask,
@@ -65,14 +68,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     },
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      // Fetch columns
+      setLoading(true);
       const columnsData = await apiClient.getColumns(project.id);
-
-      // Fetch tasks
       const tasksData = await apiClient.getTasks(project.id);
-
       setColumns(columnsData || []);
       setTasks(tasksData || []);
     } catch (error) {
@@ -80,11 +80,46 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [project.id, user]);
 
   useEffect(() => {
     fetchData();
-  }, [project.id, user, refreshTrigger]);
+  }, [fetchData, refreshTrigger]);
+
+  // Attach socket listeners when a socket prop is provided
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskCreated = () => fetchData();
+    const handleTaskUpdated = () => fetchData();
+    const handleTaskDeleted = () => fetchData();
+    const handleColumnCreated = () => fetchData();
+    const handleColumnUpdated = () => fetchData();
+    const handleColumnDeleted = () => fetchData();
+    const handleColumnsReordered = () => fetchData();
+
+    socket.on('task_created', handleTaskCreated);
+    socket.on('task_updated', handleTaskUpdated);
+    socket.on('task_deleted', handleTaskDeleted);
+    socket.on('column_created', handleColumnCreated);
+    socket.on('column_updated', handleColumnUpdated);
+    socket.on('column_deleted', handleColumnDeleted);
+    socket.on('columns_reordered', handleColumnsReordered);
+
+    return () => {
+      try {
+        socket.off('task_created', handleTaskCreated);
+        socket.off('task_updated', handleTaskUpdated);
+        socket.off('task_deleted', handleTaskDeleted);
+        socket.off('column_created', handleColumnCreated);
+        socket.off('column_updated', handleColumnUpdated);
+        socket.off('column_deleted', handleColumnDeleted);
+        socket.off('columns_reordered', handleColumnsReordered);
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [socket, fetchData]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;

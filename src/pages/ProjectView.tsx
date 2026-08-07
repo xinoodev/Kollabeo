@@ -103,6 +103,8 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
 
     // Join general channel always; join admins if user can manage
     socket.emit('joinProject', { projectId: project.id, channel: 'general' });
+    // Join board channel to receive realtime updates for tasks/columns
+    socket.emit('joinProject', { projectId: project.id, channel: 'board' });
     if (canManageProject()) {
       socket.emit('joinProject', { projectId: project.id, channel: 'admins' });
     }
@@ -119,6 +121,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
 
     return () => {
       try { socket.emit('leaveProject', { projectId: project.id, channel: 'general' }); } catch (e) {}
+      try { socket.emit('leaveProject', { projectId: project.id, channel: 'board' }); } catch (e) {}
       try { socket.emit('leaveProject', { projectId: project.id, channel: 'admins' }); } catch (e) {}
       socket.off('message', handler);
       try { socket.disconnect(); } catch (e) {}
@@ -270,6 +273,7 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ project: initialProjec
             onEditColumn={handleEditColumn}
             onDeleteColumn={handleDeleteColumn}
             refreshTrigger={refreshTrigger}
+            socket={socketRef.current}
             canManageProject={canManageProject()}
           />
         </main>
