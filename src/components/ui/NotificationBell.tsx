@@ -1,31 +1,66 @@
 import React, { useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from './Button';
 
 export const NotificationBell: React.FC = () => {
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const items = notifications.slice(0, 20);
 
   const renderMessage = (n: any) => {
+    const key = `notifications.types.${n.type}`;
+    let vars: Record<string, string | number> = {};
+
     switch (n.type) {
       case 'task_created':
-        return `Se añadió la tarea "${n.data?.title || 'tarea'}" en ${n.project_name || 'un proyecto'}`;
+        vars = {
+          title: n.data?.title || t('notifications.defaults.task'),
+          project: n.project_name || n.data?.project_name || t('notifications.defaults.project'),
+        };
+        break;
       case 'added_as_collaborator':
-        return `Te añadieron como colaborador en "${n.data?.task_title || 'una tarea'}"`;
+        vars = {
+          task_title: n.data?.task_title || t('notifications.defaults.task'),
+        };
+        break;
       case 'task_moved':
-        return `La tarea "${n.data?.title || 'tarea'}" se movió a ${n.data?.to_column || ''}`;
+        vars = {
+          title: n.data?.title || t('notifications.defaults.task'),
+          to_column: n.data?.to_column || '',
+        };
+        break;
       case 'removed_from_project':
-        return `Te eliminaron del proyecto "${n.project_name || n.data?.project_name || ''}"`;
+        vars = {
+          project_name: n.project_name || n.data?.project_name || '',
+        };
+        break;
       case 'project_invitation':
-        return `Invitación: ${n.project_name || n.data?.project_name || ''} — revisa tu correo para aceptar`;
+        vars = {
+          project_name: n.project_name || n.data?.project_name || '',
+        };
+        break;
       case 'new_message':
-        return `Nuevo mensaje en ${n.project_name || n.data?.project_name || 'un proyecto'}: "${n.data?.snippet || ''}"`;
+        vars = {
+          project_name: n.project_name || n.data?.project_name || t('notifications.defaults.project'),
+          snippet: n.data?.snippet || '',
+        };
+        break;
+      case 'removed_from_task':
+        vars = {
+          task_title: n.data?.task_title || t('notifications.defaults.task'),
+        };
+        break;
       default:
         return n.data?.message || n.type;
     }
+
+    const message = t(key, vars);
+    if (message === key) return n.data?.message || n.type;
+    return message;
   };
 
   return (
@@ -33,7 +68,7 @@ export const NotificationBell: React.FC = () => {
       <button
         onClick={() => setOpen(!open)}
         className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-        aria-label="Notifications"
+        aria-label={t('notifications.title')}
       >
         <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
         {unreadCount > 0 && (
@@ -44,16 +79,16 @@ export const NotificationBell: React.FC = () => {
       {open && (
         <div className="absolute right-0 mt-2 w-96 max-h-96 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-200">Notificaciones</div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('notifications.title')}</div>
             <div className="flex items-center space-x-2">
-              <button onClick={() => markAllRead()} className="text-xs text-blue-600 hover:underline">Marcar todas</button>
+              <button onClick={() => markAllRead()} className="text-xs text-blue-600 hover:underline">{t('notifications.markAll')}</button>
               <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><X className="h-4 w-4 text-gray-600 dark:text-gray-300"/></button>
             </div>
           </div>
 
           <ul className="p-2">
             {items.length === 0 && (
-              <li className="px-3 py-2 text-sm text-gray-500">No hay notificaciones</li>
+              <li className="px-3 py-2 text-sm text-gray-500">{t('notifications.noNotifications')}</li>
             )}
 
             {items.map((n: any) => (
@@ -64,7 +99,7 @@ export const NotificationBell: React.FC = () => {
                 </div>
                 {!n.is_read && (
                   <div className="mt-2">
-                    <Button size="sm" variant="secondary" onClick={() => markRead(n.id)}>Marcar leído</Button>
+                    <Button size="sm" variant="secondary" onClick={() => markRead(n.id)}>{t('notifications.markAsRead')}</Button>
                   </div>
                 )}
               </li>

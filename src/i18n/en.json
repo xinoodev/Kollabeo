@@ -363,6 +363,26 @@
   }
 
   ,
+  "notifications": {
+    "title": "Notifications",
+    "newNotification": "New notification",
+    "noNotifications": "No notifications",
+    "markAll": "Mark all as read",
+    "markAsRead": "Mark read",
+    "defaults": {
+      "project": "a project",
+      "task": "a task"
+    },
+    "types": {
+      "task_created": "Task \"{{title}}\" was added in {{project}}",
+      "added_as_collaborator": "You were added as collaborator in \"{{task_title}}\"",
+      "task_moved": "Task \"{{title}}\" moved to {{to_column}}",
+      "removed_from_project": "You were removed from project \"{{project_name}}\"",
+      "project_invitation": "Invitation: {{project_name}} — check your email to accept",
+      "new_message": "New message in {{project_name}}: \"{{snippet}}\"",
+      "removed_from_task": "You were removed from task \"{{task_title}}\""
+    }
+  },
   "chat": {
     "teamTitle": "Team Chat",
     "adminTitle": "Admin Chat",

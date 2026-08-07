@@ -1,37 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { useNotifications } from '../../contexts/NotificationsContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Toast: React.FC<{ n: any; onClose: () => void }> = ({ n, onClose }) => {
   useEffect(() => {
     const t = setTimeout(onClose, 6000);
     return () => clearTimeout(t);
   }, [n, onClose]);
+  const { t } = useLanguage();
 
   const message = (() => {
+    const key = `notifications.types.${n.type}`;
+    let vars: Record<string, string | number> = {};
     switch (n.type) {
       case 'task_created':
-        return `Se añadió la tarea "${n.data?.title || 'tarea'}" en ${n.project_name || 'un proyecto'}`;
+        vars = {
+          title: n.data?.title || t('notifications.defaults.task'),
+          project: n.project_name || n.data?.project_name || t('notifications.defaults.project'),
+        };
+        break;
       case 'added_as_collaborator':
-        return `Te añadieron como colaborador en "${n.data?.task_title || 'una tarea'}"`;
+        vars = { task_title: n.data?.task_title || t('notifications.defaults.task') };
+        break;
       case 'task_moved':
-        return `La tarea "${n.data?.title || 'tarea'}" se movió a ${n.data?.to_column || ''}`;
+        vars = { title: n.data?.title || t('notifications.defaults.task'), to_column: n.data?.to_column || '' };
+        break;
       case 'project_invitation':
-        return `Invitación: ${n.project_name || n.data?.project_name || ''} — revisa tu correo`;
+        vars = { project_name: n.project_name || n.data?.project_name || '' };
+        break;
       case 'new_message':
-        return `Nuevo mensaje en ${n.project_name || n.data?.project_name || 'un proyecto'}: "${n.data?.snippet || ''}"`;
+        vars = { project_name: n.project_name || n.data?.project_name || t('notifications.defaults.project'), snippet: n.data?.snippet || '' };
+        break;
       case 'removed_from_project':
-        return `Te eliminaron del proyecto "${n.project_name || n.data?.project_name || ''}"`;
+        vars = { project_name: n.project_name || n.data?.project_name || '' };
+        break;
       default:
         return n.data?.message || n.type;
     }
+    const msg = t(key, vars);
+    if (msg === key) return n.data?.message || n.type;
+    return msg;
   })();
 
   return (
     <div className="mb-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-3">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">Nueva notificación</h2>
+      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('notifications.newNotification')}</h2>
       <div className="flex items-start justify-between">
         <div className="text-sm text-gray-800 dark:text-gray-100">{message}</div>
-        <button onClick={onClose} className="text-xs text-gray-500 ml-2">Cerrar</button>
+        <button onClick={onClose} className="text-xs text-gray-500 ml-2">{t('buttons.close')}</button>
       </div>
       <div className="mt-1 text-xs text-gray-500">{new Date(n.created_at).toLocaleTimeString()}</div>
     </div>

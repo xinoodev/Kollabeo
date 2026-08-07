@@ -362,6 +362,26 @@
   }
 
   ,
+  "notifications": {
+    "title": "Notificaciones",
+    "newNotification": "Nueva notificación",
+    "noNotifications": "No hay notificaciones",
+    "markAll": "Marcar todas como leídas",
+    "markAsRead": "Marcar leído",
+    "defaults": {
+      "project": "un proyecto",
+      "task": "una tarea"
+    },
+    "types": {
+      "task_created": "Se añadió la tarea \"{{title}}\" en {{project}}",
+      "added_as_collaborator": "Te añadieron como colaborador en \"{{task_title}}\"",
+      "task_moved": "La tarea \"{{title}}\" se movió a {{to_column}}",
+      "removed_from_project": "Te eliminaron del proyecto \"{{project_name}}\"",
+      "project_invitation": "Invitación: {{project_name}} — revisa tu correo para aceptar",
+      "new_message": "Nuevo mensaje en {{project_name}}: \"{{snippet}}\"",
+      "removed_from_task": "Te eliminaron de la tarea \"{{task_title}}\""
+    }
+  },
   "chat": {
     "teamTitle": "Chat del equipo",
     "adminTitle": "Chat de administradores",
