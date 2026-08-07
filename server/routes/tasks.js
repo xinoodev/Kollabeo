@@ -6,6 +6,7 @@ import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
 import pool from '../config/database.js';
 import { createNotification } from '../config/notifications.js';
+import { getIO } from '../config/socket.js';
 
 const router = express.Router();
 
@@ -65,6 +66,15 @@ router.post('/', authenticateToken, [
     }
 
     await updateRecentAuditUser(project_id, req.user.id, 'task', task.id);
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${project_id}_board`).emit('task_created', task);
+      }
+    } catch (e) {
+      console.error('Emit task_created error:', e);
+    }
 
     res.status(201).json(task);
   } catch (error) {
@@ -191,6 +201,15 @@ router.put('/:id', authenticateToken, [
 
     await updateRecentAuditUser(projectId, req.user.id, 'task', id);
 
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${projectId}_board`).emit('task_updated', updatedTask);
+      }
+    } catch (e) {
+      console.error('Emit task_updated error:', e);
+    }
+
     res.json(updatedTask);
   } catch (error) {
     console.error('Update task error:', error);
@@ -221,6 +240,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
 
     await updateRecentAuditUser(project_id, req.user.id, 'task', id);
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${project_id}_board`).emit('task_deleted', { id });
+      }
+    } catch (e) {
+      console.error('Emit task_deleted error:', e);
+    }
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {

@@ -5,6 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkProjectAccess } from '../middleware/permissions.js';
 import { auditMiddleware, updateRecentAuditUser } from '../middleware/audit.js';
+import { getIO } from '../config/socket.js';
 
 const router = express.Router();
 
@@ -45,6 +46,15 @@ router.post('/', authenticateToken, [
     );
 
     await updateRecentAuditUser(project_id, req.user.id, 'column', result.rows[0].id);
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${project_id}_board`).emit('column_created', result.rows[0]);
+      }
+    } catch (e) {
+      console.error('Emit column_created error:', e);
+    }
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -109,6 +119,15 @@ router.put('/:id', authenticateToken, [
 
     await updateRecentAuditUser(projectId, req.user.id, 'column', id);
 
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${projectId}_board`).emit('column_updated', result.rows[0]);
+      }
+    } catch (e) {
+      console.error('Emit column_updated error:', e);
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Update column error:', error);
@@ -150,6 +169,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM task_columns WHERE id = $1', [id]);
 
     await updateRecentAuditUser(project_id, req.user.id, 'column', id);
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`project_${project_id}_board`).emit('column_deleted', { id });
+      }
+    } catch (e) {
+      console.error('Emit column_deleted error:', e);
+    }
 
     res.json({ message: 'Column deleted successfully' });
   } catch (error) {
@@ -222,6 +250,15 @@ router.patch('/reorder', authenticateToken, [
 
       for (const column of columns) {
         await updateRecentAuditUser(projectId, req.user.id, 'column', column.id);
+      }
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`project_${projectId}_board`).emit('columns_reordered', result.rows);
+        }
+      } catch (e) {
+        console.error('Emit columns_reordered error:', e);
       }
 
       res.json(result.rows);
