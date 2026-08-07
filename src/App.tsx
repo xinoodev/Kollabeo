@@ -8,6 +8,7 @@ import { AuthForm } from './components/auth/AuthForm';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
 import { AcceptInvitation } from './pages/AcceptInvitation';
 import { ProjectView } from './pages/ProjectView';
+import { apiClient } from './lib/api';
 import { Project } from './types';
 import { useEffect } from 'react';
 import { Dashboard } from './pages/Dashboard';
@@ -50,6 +51,32 @@ function AppContent() {
     }
   }, [user]);
 
+  // Restore project view from URL on load (after auth ready)
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+
+    const path = window.location.pathname;
+    const match = path.match(/^\/projects\/(\d+)\/?$/);
+    if (!match) return;
+
+    const projectId = Number(match[1]);
+    (async () => {
+      try {
+        const p = await apiClient.getProject(projectId);
+        if (p) {
+          setSelectedProject(p);
+          setCurrentView('project');
+        } else {
+          setCurrentView('dashboard');
+        }
+      } catch (err) {
+        console.error('Failed to load project from URL', err);
+        setCurrentView('dashboard');
+      }
+    })();
+  }, [loading, user]);
+
   const urlParams = new URLSearchParams(window.location.search);
   const resetToken = urlParams.get('token');
 
@@ -65,7 +92,7 @@ function AppContent() {
         onGoToProject={(project: Project) => {
           setSelectedProject(project);
           setCurrentView('project');
-          window.history.replaceState({}, '', '/');
+          try { window.history.replaceState({}, '', `/projects/${project.id}`); } catch (e) {}
         }}
         onGoToDashboard={() => {
           window.history.replaceState({}, '', '/');
@@ -90,11 +117,13 @@ function AppContent() {
   const handleProjectSelect = (project: Project) => {
     setSelectedProject(project);
     setCurrentView('project');
+    try { window.history.pushState({}, '', `/projects/${project.id}`); } catch (e) {}
   };
 
   const handleBackToDashboard = () => {
     setSelectedProject(null);
     setCurrentView('dashboard');
+    try { window.history.replaceState({}, '', '/'); } catch (e) {}
   };
 
   const handleNavigateToProfile = () => {
